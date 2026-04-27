@@ -1,9 +1,9 @@
 import type { Article } from '@/lib/types'
 
-// ── FAQ抽出（## よくある質問 セクションをパース）──────────
+// ── FAQ抽出（## Q&A セクションをパース、旧表記 ## よくある質問 も対応）──────────
 
 function extractFaq(body: string): { question: string; answer: string }[] {
-  const section = body.match(/## よくある質問([\s\S]*?)(?=\n## |\n---|\n\*\*出典|$)/)?.[1] ?? ''
+  const section = body.match(/## (?:Q&A|よくある質問)([\s\S]*?)(?=\n## |\n---|\n\*\*出典|$)/)?.[1] ?? ''
   const items: { question: string; answer: string }[] = []
   const blocks = section.split(/\n(?=\*\*Q\.)/).filter(Boolean)
 
