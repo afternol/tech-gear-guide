@@ -3,8 +3,8 @@ import { getArticles } from '@/lib/articles'
 import { CATEGORY_LABELS } from '@/lib/types'
 import type { Category } from '@/lib/types'
 
-const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devicebrief.com'
-const SITE_NAME = 'DeviceBrief'
+const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com'
+const SITE_NAME = 'Tech Gear Guide'
 
 const VALID_CATEGORIES: (Category | 'all')[] = [
   'all', 'smartphone', 'tablet', 'windows', 'cpu_gpu', 'ai', 'general'

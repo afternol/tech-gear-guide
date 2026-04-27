@@ -10,7 +10,7 @@ import { ArticleCard } from '@/components/ArticleCard'
 import { NewsArticleStructuredData, BreadcrumbStructuredData } from '@/components/StructuredData'
 import { CATEGORY_LABELS, CATEGORY_COLORS, ARTICLE_TYPE_LABELS } from '@/lib/types'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devicebrief.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com'
 
 // 記事詳細ページは5分キャッシュ（publish.pyのISRで即時更新）
 export const revalidate = 300
@@ -138,7 +138,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 Phase {article.progressive_phase} / 3
               </span>
             )}
-            <span>DeviceBrief編集部</span>
+            <span>Tech Gear Guide編集部</span>
           </div>
         </header>
 

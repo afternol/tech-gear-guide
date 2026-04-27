@@ -9,7 +9,7 @@ const notoSansJP = Noto_Sans_JP({
   variable: '--font-noto-sans-jp',
 })
 
-const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgearguide.jp'
+const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com'
 const SITE_NAME = 'Tech Gear Guide'
 const SITE_DESC = 'スマホ・PC・GPU・AI・XR・ウェアラブルの最新テックニュースを日本語で。海外権威メディアの情報を専門家視点で解説。'
 

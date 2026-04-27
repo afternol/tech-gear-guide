@@ -9,6 +9,9 @@ node_modules/
 .env*.local
 pipeline/.env
 
+# ビルドキャッシュ
+tsconfig.tsbuildinfo
+
 # パイプライン実行ファイル（毎回生成される）
 pipeline/collected_articles.jsonl
 pipeline/generated_articles.jsonl
