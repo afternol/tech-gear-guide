@@ -162,7 +162,21 @@ SYSTEM_PROMPT = """\
 6. 発売日・発表日・リリース日などの年号はソース記事の記載を厳守する
    （例：ソースが2026年と書いているなら2026年と記載。絶対に1年ずらさない）
 7. 今回のソース記事に書かれていない別の製品・別のニュースへの言及を禁止する
+   （「同日に〜が報じられた」「同じく〜も発表」等のバッチ内汚染は厳禁）
 8. ソース信頼度スコア（X/5、★☆等）は記事本文に一切記載しない
+9. 不確定表現の断定変換を禁止する
+   ソースの「may」「might」「reportedly」「allegedly」「up to」「as many as」は
+   必ず「〜の可能性があります」「〜と報じられています」「最大〜」等の不確定表現で訳す
+10. 数値の限定詞（最大・最小・最大で・約）はソース通りに維持する
+    「up to 60%」→「60%」（最大なし）への変換は誤り
+11. ソースの否定・未確認表現は必ず否定のまま訳す
+    「not confirmed」→「確認されていません」（「確認された」への変換は誤り）
+    「denied」→「否定されています」
+12. 鉤括弧「」を使った直接引用はソースに実在する表現のみ許可する
+    ソースに該当する発言・引用がない場合は間接引用にする
+13. 通貨換算はソースに円換算が記載されている場合のみ行う
+    ソースが「$1,599」の場合は「1,599ドル（約23万円）」のような換算は禁止。
+    ドル表記のままにすること（ただし円換算はあくまで補足として添える場合はWARN対象だが禁止ではない）
 
 【文体ルール】
 - 文末は「〜です」「〜ます」「〜しています」「〜されています」
@@ -280,6 +294,16 @@ FAQ_GUIDE = """\
 スペック詳細・価格比較・使い方系の記事にのみ追加し、短いニュース記事では省略可。
 """
 
+PRE_WRITE_CHECKLIST = """\
+【執筆前に必ず確認（記事を書き始める前に頭の中でチェック）】
+□ ソース記事の発売日・発表日の年号を確認した（20XX年が正しいか）
+□ ソースに「may」「reportedly」「up to」「leaked」等の不確定表現があれば把握した
+□ ソースに「not confirmed」「denied」等の否定表現があれば把握した
+□ 直接引用する予定の文言はソースに実在する（存在しなければ間接引用にする）
+□ 今回のソース記事に登場しない別製品・別ニュースには言及しない
+□ 通貨換算はソースに記載がある場合のみ行う
+"""
+
 # ─────────────────────────────────────────────
 # プロンプトビルダー
 # ─────────────────────────────────────────────
@@ -305,6 +329,8 @@ def build_a_type_prompt(a: RawArticle) -> str:
 {ACTION_GUIDE}
 
 {FAQ_GUIDE}
+
+{PRE_WRITE_CHECKLIST}
 
 【出力フォーマット（必ずこの形式で出力）】
 ---META---
@@ -333,13 +359,13 @@ seo_description: [150字以内。検索意図に直接回答する内容]
 - [{a.title}]({a.url}) — {a.source_name}
 
 【ソース記事本文】
-{a.body[:4000]}
+{a.body[:6000]}
 """
 
 
 def build_b_type_prompt(articles: list[RawArticle], topic: str) -> str:
     sources_block = "\n\n".join(
-        f"【ソース{i+1}: {a.source_name}】\n{a.body[:2000]}"
+        f"【ソース{i+1}: {a.source_name}】\n{a.body[:2500]}"
         for i, a in enumerate(articles[:5])
     )
     sources_citations = "\n".join(
@@ -369,6 +395,12 @@ def build_b_type_prompt(articles: list[RawArticle], topic: str) -> str:
 {ACTION_GUIDE}
 
 {FAQ_GUIDE}
+
+{PRE_WRITE_CHECKLIST}
+
+【B型記事特有の注意】
+- ソース間で数値・スペックが異なる場合は「ソース1では〜、ソース2では〜と報じられています」と明記し、どちらかに断定しない
+- ソース同士を組み合わせてソースが明示していない新しい結論を導かない
 
 【出力フォーマット】
 ---META---
@@ -403,7 +435,7 @@ def build_progressive_update_prompt(
     phase_label  = {2: "詳細版（Phase 2）", 3: "決定版（Phase 3）"}.get(target_phase, f"Phase {target_phase}")
     target_chars = {2: "1,800〜2,500字", 3: "2,200〜3,000字"}.get(target_phase, "2,000字以上")
     sources_block = "\n\n".join(
-        f"【新ソース{i+1}: {a.source_name}】\n{a.body[:2000]}"
+        f"【新ソース{i+1}: {a.source_name}】\n{a.body[:2500]}"
         for i, a in enumerate(articles[:5])
     )
     sources_citations = "\n".join(
@@ -484,6 +516,8 @@ def build_c_type_prompt(a: RawArticle) -> str:
 
 {FAQ_GUIDE}
 
+{PRE_WRITE_CHECKLIST}
+
 【出力フォーマット】
 ---META---
 title: [SEOタイトル・「〜リーク」「〜流出」等・70字以内]
@@ -505,7 +539,7 @@ seo_description: [150字以内]
 - [{a.title}]({a.url}) — {a.source_name}
 
 【ソース記事本文】
-{a.body[:4000]}
+{a.body[:6000]}
 """
 
 # ─────────────────────────────────────────────

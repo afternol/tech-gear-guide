@@ -104,8 +104,19 @@ def extract_body(text: str) -> str:
 def parse_tags(tags_str: str) -> list[str]:
     return [t.strip().strip("[]") for t in tags_str.split(",") if t.strip()]
 
-def is_still_fail(body: str, title: str, slug: str) -> tuple[bool, list[str]]:
-    """修正後の基本チェック。致命的問題のみFAILとする"""
+_FUTURE_CONTEXT_RE = re.compile(
+    r'(\d{4})年.{0,40}(?:発売|発表|リリース|公開|開催|登場|予定|実装)',
+)
+_CROSS_BATCH_RE    = re.compile(r'同日[にも].{0,40}(?:報じ|発表|リリース|公開|明らか)')
+_INTERNAL_SCORE_RE = re.compile(r'\b[1-5]/5(?:と|で|に|は|の)')
+
+def is_still_fail(
+    body: str,
+    title: str,
+    slug: str,
+    published_at: str = "",
+) -> tuple[bool, list[str]]:
+    """修正後の基本チェック（基本構造 + 重要精度チェック）"""
     fails = []
     if len(body) < MIN_BODY_LEN:
         fails.append(f"本文が短すぎます（{len(body)}文字）")
@@ -113,6 +124,28 @@ def is_still_fail(body: str, title: str, slug: str) -> tuple[bool, list[str]]:
         fails.append("タイトルがありません")
     if not slug or not re.match(r'^[a-z0-9\-]+$', slug):
         fails.append(f"スラッグが不正: {slug}")
+
+    # 修正後も年号ハルシネーションが残っていないか
+    if published_at:
+        try:
+            from datetime import datetime as _dt
+            pub_year = _dt.fromisoformat(published_at).year
+            for m in _FUTURE_CONTEXT_RE.finditer(body):
+                if int(m.group(1)) < pub_year:
+                    ctx = body[m.start(): m.start() + 50].replace("\n", " ")
+                    fails.append(f"修正後も年号ずれが残存: 「{ctx[:40]}」")
+                    break
+        except Exception:
+            pass
+
+    # 修正後もバッチ汚染が残っていないか
+    if _CROSS_BATCH_RE.search(body):
+        fails.append("修正後もバッチ間汚染パターン（同日に〜）が残存しています")
+
+    # 修正後も内部スコアが残っていないか
+    if _INTERNAL_SCORE_RE.search(body):
+        fails.append("修正後も内部スコア（X/5）が本文に残存しています")
+
     return bool(fails), fails
 
 # ─────────────────────────────────────────────
@@ -251,10 +284,11 @@ async def main():
     final_articles: list[dict] = list(pass_articles)
     excluded = 0
     for a in corrected_list:
-        slug  = a.get("slug", "")
-        body  = a.get("body", "")
-        title = a.get("title", "")
-        fail, reasons = is_still_fail(body, title, slug)
+        slug         = a.get("slug", "")
+        body         = a.get("body", "")
+        title        = a.get("title", "")
+        published_at = a.get("published_at", "")
+        fail, reasons = is_still_fail(body, title, slug, published_at)
         if fail:
             print(f"  ❌ 修正後もFAIL（除外）: {slug} — {reasons}")
             excluded += 1

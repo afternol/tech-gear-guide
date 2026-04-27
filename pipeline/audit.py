@@ -76,6 +76,26 @@ _FUTURE_CONTEXT_RE = re.compile(
 _INTERNAL_SCORE_RE = re.compile(r'\b[1-5]/5(?:と|で|に|は|の)')
 _STAR_RATING_RE    = re.compile(r'[★☆]{3,}')
 
+# バッチ間汚染（同日に別ソースを参照）
+_CROSS_BATCH_RE = re.compile(
+    r'同日[にも].{0,40}(?:報じ|発表|リリース|公開|明らか)',
+)
+
+# "up to N%" パターン（magnitude distortion 検出用）
+_UP_TO_PCT_RE = re.compile(r'up to (\d+)\s*%', re.IGNORECASE)
+_UP_TO_X_RE   = re.compile(r'(?:up to|as many as|as much as) (\d+)', re.IGNORECASE)
+
+# ソース内のヘッジング表現
+_HEDGE_EN_RE = re.compile(
+    r'\b(?:may|might|could|reportedly|allegedly|rumored|leaked|possibly|expected to|up to|as many as)\b',
+    re.IGNORECASE,
+)
+# 記事内の日本語ヘッジング表現
+_HEDGE_JA_PATTERNS = [
+    "かもしれません", "可能性があります", "と報じられ", "とされ", "とみられ",
+    "リーク", "噂", "予想され", "見込まれ", "最大", "の可能性",
+]
+
 # ─────────────────────────────────────────────
 # 日付整合性チェック
 # ─────────────────────────────────────────────
@@ -110,6 +130,53 @@ def check_metadata_leaks(body: str) -> list[str]:
     if _STAR_RATING_RE.search(body):
         issues.append("信頼度星表示（★☆×3以上）が本文に残っている可能性があります")
     return issues
+
+# ─────────────────────────────────────────────
+# 追加チェック関数群
+# ─────────────────────────────────────────────
+
+def check_cross_batch_contamination(body: str) -> list[str]:
+    """バッチ内別記事への言及パターンを検出（FAILレベル）"""
+    if _CROSS_BATCH_RE.search(body):
+        return ["「同日に〜が報じ/発表」パターンを検出。別記事のトピックを参照している可能性があります"]
+    return []
+
+def check_title_body_consistency(title: str, body: str) -> list[str]:
+    """タイトル内の数値が本文に存在するか確認"""
+    warnings = []
+    for m in re.finditer(r'(\d{2,})(?:[.,]\d+)?(?:\s*%)?', title):
+        num = m.group(1)
+        if num not in body:
+            warnings.append(f"タイトルの数値「{num}」が本文に見当たりません")
+    return warnings[:2]
+
+def check_magnitude_distortion(body: str, source_bodies: list[str]) -> list[str]:
+    """ソースの「up to N%」が記事で「最大」なしの「N%」に断定変換されていないか確認"""
+    source_text = " ".join(source_bodies)
+    warnings    = []
+    for m in _UP_TO_PCT_RE.finditer(source_text):
+        num = m.group(1)
+        # 記事でこの数値が「最大」や「約」なしで登場するか
+        strict_re = re.compile(rf'(?<![最大約\d]){re.escape(num)}%')
+        if strict_re.search(body):
+            warnings.append(
+                f"ソースの「up to {num}%」が記事で「最大」なしの「{num}%」に断定変換されている可能性があります"
+            )
+    return warnings[:2]
+
+def check_hedging_preservation(body: str, source_bodies: list[str]) -> list[str]:
+    """ソースに不確定表現が多いのに記事では断定調になっていないか確認"""
+    source_text  = " ".join(source_bodies)
+    hedge_count  = len(_HEDGE_EN_RE.findall(source_text))
+    if hedge_count < 3:
+        return []
+    has_hedge_in_article = any(h in body for h in _HEDGE_JA_PATTERNS)
+    if not has_hedge_in_article:
+        return [
+            f"ソースに不確定表現（may/reportedly等）が{hedge_count}箇所あるが、"
+            "記事では断定調になっている可能性があります"
+        ]
+    return []
 
 # ─────────────────────────────────────────────
 # ソース照合
@@ -165,31 +232,52 @@ _AI_PROMPT = """\
 確認項目（重要度順）:
 
 1.【年号・日付の誤り ★最重要】
-  - 発売日・発表日・リリース日の年号がソースと一致しているか
-  - ソースが 2026年の記事なのに記事本文が「2025年」と書いていないか
-  - 逆に過去のことを未来として書いていないか
+   - 発売日・発表日・リリース日の年号がソースと一致しているか
+   - ソースが2026年4月の記事なのに記事本文が「2025年」と書いていないか
 
-2.【ソース外トピックへの言及 ★重要】
-  - 「同日に○○が報じられた」など、このソース記事にない別の記事・製品への言及がないか
-  - ソースに書かれていない競合製品との比較がないか
+2.【否定・未確認事項の断定変換 ★最重要】
+   - ソースで「not confirmed」「denied」「ruled out」「not yet」の情報が記事で断定されていないか
+   - 「まだ発表されていない」が「発表された」に変わっていないか
 
-3.【数値・スペックの誤り】
-  - ソースにない数値・スペック・パーセンテージが追加されていないか
-  - ソースの数値と異なる値（例: ソース30%→記事60%）がないか
+3.【ヘッジング表現の消去 ★重要】
+   - ソースの「may」「might」「reportedly」「allegedly」「up to」「as many as」が
+     記事で「最大〜」「〜の可能性」等の不確定表現なしで断定されていないか
+   - 「最大60%高速化」がソースなのに記事で「60%高速化」と断定になっていないか
 
-4.【固有名詞の誤り】
-  - 製品名・モデル名・人物名・メディア名・チャンネル名が正しいか
+4.【ソース外トピックへの言及 ★重要】
+   - 「同日に○○が報じられた」など、このソース記事にない別のニュース・製品への言及がないか
+   - ソース記事に書かれていない競合製品との比較がないか
 
-5.【ソースと矛盾する表現】
-  - ソースと逆の意味・内容になっていないか
+5.【引用符の捏造】
+   - 記事内の「〜と○○氏は述べています」等の直接引用がソースに実在するか
+   - ソースにない発言を「」で引用していないか
+
+6.【数値・スペックの誤り】
+   - ソースにない数値・スペック・パーセンテージが追加されていないか
+   - ソースの数値と異なる値（例: ソース30%→記事60%）がないか
+
+7.【通貨換算の捏造】
+   - ソースに円換算がないのに記事で「約○○万円」等の円換算を追加していないか
+
+8.【固有名詞の誤り】
+   - 製品名・モデル名・人物名・メディア名・チャンネル名が正しいか
+   - ソース記事がさらに別メディアを引用している場合（Neowin via Windows Central等）、
+     帰属先の表記が正しいか
+
+9.【投機的合成】
+   - ソースの複数情報を組み合わせてソースが明示していない新しい主張を導いていないか
+   （例: ソースA「薄型化」＋ソースB「バッテリー増量」→記事「薄型化しながらバッテリー増量」という未言及の結論）
+
+10.【タイトルと本文の整合性】
+    - タイトルに数値・スペックが含まれる場合、本文でも同じ数値が正しく使われているか
 
 JSON形式のみで回答（コードブロック不要）:
-{{"verdict": "accurate"|"minor_issues"|"major_issues", "issues": ["具体的な問題（例: ソースは2026年7月発売と記載しているが記事本文では2025年7月22日と誤記）"], "confidence": 0.0-1.0}}
+{{"verdict": "accurate"|"minor_issues"|"major_issues", "issues": ["具体的な問題（例: ソースは2026年7月発売と書いているが記事では2025年7月22日と誤記）"], "confidence": 0.0-1.0}}
 
 【ソース記事】
 {source_body}
 
-【生成記事】
+【生成記事（公開日: {published_at}）】
 {article_body}
 """
 
@@ -205,14 +293,14 @@ async def ai_judge_one(
 ) -> dict:
     async with sem:
         prompt = _AI_PROMPT.format(
-            source_body=source_body[:3000],
-            article_body=article_body[:3000],
+            source_body=source_body[:4500],
+            article_body=article_body,         # 記事は全文使用
             published_at=published_at[:10],
         )
         try:
             resp = await client.messages.create(
                 model=MODEL,
-                max_tokens=700,
+                max_tokens=900,
                 system=_AI_SYSTEM,
                 messages=[{"role": "user", "content": prompt}],
             )
@@ -307,12 +395,28 @@ def audit_article(
     for li in leak_issues:
         issues.append(li)
 
+    # ── バッチ間汚染チェック ──
+    for c in check_cross_batch_contamination(body):
+        issues.append(c)
+
+    # ── タイトル・本文整合性 ──
+    for w in check_title_body_consistency(title, body):
+        warnings.append(w)
+
     # ── グラウンディング ──
     src_bodies = _source_bodies(article, source_map)
     if src_bodies:
         ungrounded = check_grounding(body, src_bodies)
         if ungrounded:
             warnings.append(f"ソースで未確認の記述: {', '.join(ungrounded[:3])}")
+
+        # ── magnitude distortion ──
+        for w in check_magnitude_distortion(body, src_bodies):
+            warnings.append(w)
+
+        # ── hedging preservation ──
+        for w in check_hedging_preservation(body, src_bodies):
+            warnings.append(w)
     else:
         warnings.append("ソース本文が取得できていません（grounding不可）")
 
