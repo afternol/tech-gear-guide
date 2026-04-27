@@ -66,41 +66,41 @@ jobs:
             COUNT=$(wc -l < collected_articles.jsonl)
             echo "収集記事数: $COUNT 件"
             echo "COLLECTED_COUNT=$COUNT" >> $GITHUB_ENV
+            if [ "$COUNT" -eq 0 ]; then
+              echo "新規記事なし（キャッシュ済みURL）。このバッチはスキップします。"
+              echo "SKIP_PIPELINE=true" >> $GITHUB_ENV
+            fi
           else
-            echo "collected_articles.jsonl が見つかりません"
-            exit 1
+            echo "COLLECTED_COUNT=0" >> $GITHUB_ENV
+            echo "SKIP_PIPELINE=true" >> $GITHUB_ENV
           fi
 
       - name: '✍️  generate.py — 記事生成'
+        if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
         run: python generate.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: 生成件数を確認
+        if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
         run: |
           if [ -f generated_articles.jsonl ]; then
             COUNT=$(wc -l < generated_articles.jsonl)
             echo "生成記事数: $COUNT 件"
             echo "GENERATED_COUNT=$COUNT" >> $GITHUB_ENV
-            if [ "$COUNT" -eq 0 ]; then
-              echo "生成記事が0件です"
-              exit 1
-            fi
-          else
-            echo "generated_articles.jsonl が見つかりません"
-            exit 1
           fi
 
       - name: '🔍 audit.py — 品質監査'
+        if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
         run: python audit.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: '🚀 publish.py — Supabase公開'
-        if: ${{ github.event.inputs.dry_run != 'true' }}
+        if: ${{ env.SKIP_PIPELINE != 'true' && github.event.inputs.dry_run != 'true' }}
         working-directory: pipeline
         run: python publish.py
         env:
