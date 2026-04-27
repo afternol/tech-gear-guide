@@ -1,0 +1,269 @@
+# ============================================================
+# DeviceBrief コンテンツパイプライン
+# ファイル配置: .github/workflows/pipeline.yml
+#
+# 実行スケジュール（JST）:
+#   7:00  → 朝バッチ（前夜〜朝の海外ニュースを収集）
+#   12:00 → 昼バッチ（午前中の速報を処理）
+#   18:00 → 夕バッチ（米国午前〜昼のニュースを処理）
+#
+# 環境変数（GitHub Settings > Secrets and variables > Actions）:
+#   ANTHROPIC_API_KEY         Claude API キー
+#   SUPABASE_URL              https://xxx.supabase.co
+#   SUPABASE_SERVICE_KEY      service_role キー（admin権限）
+#   NEXTJS_REVALIDATE_URL     https://devicebrief.com/api/revalidate
+#   NEXTJS_REVALIDATE_SECRET  ISR シークレットトークン
+#   SITE_SITEMAP_URL          https://devicebrief.com/sitemap.xml
+#   UNSPLASH_ACCESS_KEY       Unsplash API キー
+# ============================================================
+
+name: DeviceBrief Pipeline
+
+on:
+  schedule:
+    - cron: '0 22 * * *'   # JST 07:00 (UTC 22:00 前日)
+    - cron: '0 3 * * *'    # JST 12:00 (UTC 03:00)
+    - cron: '0 9 * * *'    # JST 18:00 (UTC 09:00)
+  workflow_dispatch:
+    inputs:
+      skip_collect:
+        description: 'collect.py をスキップ（既存 collected_articles.jsonl を使用）'
+        type: boolean
+        default: false
+      dry_run:
+        description: 'publish.py をスキップ（生成・監査のみ）'
+        type: boolean
+        default: false
+
+jobs:
+  pipeline:
+    name: コンテンツ生成・公開
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ──────────────────────────────────────────────────────
+      # 準備
+      # ──────────────────────────────────────────────────────
+
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python 3.12 セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: 依存パッケージをインストール
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Playwright（Chromium）をインストール
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      # ──────────────────────────────────────────────────────
+      # キャッシュ復元
+      # processed_urls_cache.json  : バッチ間の重複URL防止
+      # progressive_slugs_cache.json: Progressive Article追跡
+      # ──────────────────────────────────────────────────────
+
+      - name: パイプラインキャッシュを復元
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            pipeline/processed_urls_cache.json
+            pipeline/progressive_slugs_cache.json
+          key: devicebrief-pipeline-cache-${{ github.run_id }}
+          restore-keys: |
+            devicebrief-pipeline-cache-
+
+      # ──────────────────────────────────────────────────────
+      # Step 1: collect.py — ニュース収集
+      # ──────────────────────────────────────────────────────
+
+      - name: '📡 collect.py — ニュース収集'
+        if: ${{ github.event.inputs.skip_collect != 'true' }}
+        working-directory: pipeline
+        run: python collect.py
+        env:
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+
+      - name: 収集件数を確認
+        working-directory: pipeline
+        run: |
+          if [ -f collected_articles.jsonl ]; then
+            COUNT=$(wc -l < collected_articles.jsonl)
+            echo "収集記事数: $COUNT 件"
+            echo "COLLECTED_COUNT=$COUNT" >> $GITHUB_ENV
+          else
+            echo "collected_articles.jsonl が見つかりません"
+            exit 1
+          fi
+
+      # ──────────────────────────────────────────────────────
+      # Step 2: generate.py — 記事生成
+      # ──────────────────────────────────────────────────────
+
+      - name: '✍️  generate.py — 記事生成'
+        working-directory: pipeline
+        run: python generate.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: 生成件数を確認
+        working-directory: pipeline
+        run: |
+          if [ -f generated_articles.jsonl ]; then
+            COUNT=$(wc -l < generated_articles.jsonl)
+            echo "生成記事数: $COUNT 件"
+            echo "GENERATED_COUNT=$COUNT" >> $GITHUB_ENV
+            if [ "$COUNT" -eq 0 ]; then
+              echo "⚠️  生成記事が0件です"
+              exit 1
+            fi
+          else
+            echo "generated_articles.jsonl が見つかりません"
+            exit 1
+          fi
+
+      # ──────────────────────────────────────────────────────
+      # Step 3: audit.py — 品質監査
+      # ──────────────────────────────────────────────────────
+
+      - name: '🔍 audit.py — 品質監査'
+        working-directory: pipeline
+        run: python audit.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: 監査結果を確認
+        working-directory: pipeline
+        run: |
+          if [ -f audit_report.jsonl ]; then
+            PASS=$(grep -c '"status":"PASS"' audit_report.jsonl || true)
+            WARN=$(grep -c '"status":"WARN"' audit_report.jsonl || true)
+            FAIL=$(grep -c '"status":"FAIL"' audit_report.jsonl || true)
+            echo "監査結果: PASS=$PASS / WARN=$WARN / FAIL=$FAIL"
+            echo "AUDIT_PASS=$PASS" >> $GITHUB_ENV
+            echo "AUDIT_FAIL=$FAIL" >> $GITHUB_ENV
+          fi
+
+      # ──────────────────────────────────────────────────────
+      # Step 4: publish.py — Supabase公開
+      # ──────────────────────────────────────────────────────
+
+      - name: '🚀 publish.py — Supabase公開'
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        working-directory: pipeline
+        run: python publish.py
+        env:
+          SUPABASE_URL:             ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY:     ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NEXTJS_REVALIDATE_URL:    ${{ secrets.NEXTJS_REVALIDATE_URL }}
+          NEXTJS_REVALIDATE_SECRET: ${{ secrets.NEXTJS_REVALIDATE_SECRET }}
+          SITE_SITEMAP_URL:         ${{ secrets.SITE_SITEMAP_URL }}
+          UNSPLASH_ACCESS_KEY:      ${{ secrets.UNSPLASH_ACCESS_KEY }}
+
+      - name: 公開結果をサマリーに出力
+        if: always()
+        working-directory: pipeline
+        run: |
+          echo "## DeviceBrief パイプライン実行結果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| ステップ | 結果 |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| 収集記事数 | ${COLLECTED_COUNT:-N/A} 件 |" >> $GITHUB_STEP_SUMMARY
+          echo "| 生成記事数 | ${GENERATED_COUNT:-N/A} 件 |" >> $GITHUB_STEP_SUMMARY
+          echo "| 監査 PASS  | ${AUDIT_PASS:-N/A} 件 |" >> $GITHUB_STEP_SUMMARY
+          echo "| 監査 FAIL  | ${AUDIT_FAIL:-N/A} 件 |" >> $GITHUB_STEP_SUMMARY
+          if [ -f published_log.jsonl ]; then
+            PUB=$(grep -c '"status":"published"' published_log.jsonl || true)
+            UPD=$(grep -c '"action":"updated"'   published_log.jsonl || true)
+            SKP=$(grep -c '"status":"skipped"'   published_log.jsonl || true)
+            FAIL_PUB=$(grep -c '"status":"failed"' published_log.jsonl || true)
+            echo "| 新規公開 | $PUB 件 |" >> $GITHUB_STEP_SUMMARY
+            echo "| Progressive更新 | $UPD 件 |" >> $GITHUB_STEP_SUMMARY
+            echo "| スキップ（重複） | $SKP 件 |" >> $GITHUB_STEP_SUMMARY
+            echo "| 公開失敗 | $FAIL_PUB 件 |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ──────────────────────────────────────────────────────
+      # キャッシュ保存（次回バッチに引き継ぐ）
+      # ──────────────────────────────────────────────────────
+
+      - name: パイプラインキャッシュを保存
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            pipeline/processed_urls_cache.json
+            pipeline/progressive_slugs_cache.json
+          key: devicebrief-pipeline-cache-${{ github.run_id }}
+
+      # ──────────────────────────────────────────────────────
+      # ログをアーティファクトとして保存（30日間）
+      # ──────────────────────────────────────────────────────
+
+      - name: ログをアーティファクトに保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-logs-${{ github.run_number }}
+          path: |
+            pipeline/published_log.jsonl
+            pipeline/audit_report.jsonl
+            pipeline/audit_report.md
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # ──────────────────────────────────────────────────────
+      # 失敗通知（オプション: Slack Webhook を設定した場合）
+      # ──────────────────────────────────────────────────────
+
+      - name: 失敗時に通知
+        if: failure()
+        run: |
+          echo "パイプラインが失敗しました。GitHub Actions のログを確認してください。"
+          echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Slack通知を追加する場合:
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"DeviceBrief パイプライン失敗: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}
+
+
+# ============================================================
+# 週次リフレッシュジョブ（流入減衰記事の自動更新）
+# ============================================================
+
+  weekly-refresh:
+    name: 週次リフレッシュバッチ
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'schedule' && github.event.schedule == '0 22 * * 0'  # 日曜 JST 7:00
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: 依存パッケージをインストール
+        run: pip install -r pipeline/requirements.txt
+
+      - name: '♻️  refresh.py — 流入減衰記事のリフレッシュ'
+        working-directory: pipeline
+        run: python refresh.py
+        env:
+          ANTHROPIC_API_KEY:        ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL:             ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY:     ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NEXTJS_REVALIDATE_URL:    ${{ secrets.NEXTJS_REVALIDATE_URL }}
+          NEXTJS_REVALIDATE_SECRET: ${{ secrets.NEXTJS_REVALIDATE_SECRET }}
+          SITE_SITEMAP_URL:         ${{ secrets.SITE_SITEMAP_URL }}

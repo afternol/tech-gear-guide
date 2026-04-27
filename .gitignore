@@ -1,0 +1,36 @@
+# Next.js
+.next/
+out/
+node_modules/
+
+# 環境変数（機密情報）
+.env
+.env.local
+.env*.local
+pipeline/.env
+
+# パイプライン実行ファイル（毎回生成される）
+pipeline/collected_articles.jsonl
+pipeline/generated_articles.jsonl
+pipeline/published_log.jsonl
+pipeline/audit_report.jsonl
+pipeline/tmp_images/
+
+# キャッシュ（GitHub Actionsキャッシュで管理）
+pipeline/processed_urls_cache.json
+pipeline/progressive_slugs_cache.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
