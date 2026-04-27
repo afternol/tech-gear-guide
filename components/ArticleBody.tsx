@@ -3,6 +3,25 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Components } from 'react-markdown'
+import type { Element, Text } from 'hast'
+import { EmbedCard } from '@/components/EmbedCard'
+
+// 段落がベアURL1つだけで構成されているか判定してEmbedCardに委譲
+function resolveEmbed(node: Element): string | null {
+  if (node.children.length !== 1) return null
+  const child = node.children[0]
+  if (child.type !== 'element') return null
+  const el = child as Element
+  if (el.tagName !== 'a') return null
+  const href = el.properties?.href as string | undefined
+  if (!href || !/^https?:\/\//.test(href)) return null
+  // テキストがURLそのものかチェック（bare autolink）
+  const text = el.children
+    .filter((c): c is Text => c.type === 'text')
+    .map(c => c.value)
+    .join('')
+  return text === href ? href : null
+}
 
 const components: Components = {
   h2: ({ children }) => (
@@ -13,9 +32,13 @@ const components: Components = {
   h3: ({ children }) => (
     <h3 className="text-lg font-semibold text-gray-800 mt-6 mb-2">{children}</h3>
   ),
-  p: ({ children }) => (
-    <p className="text-gray-700 leading-relaxed my-3">{children}</p>
-  ),
+  p: ({ children, node }) => {
+    if (node) {
+      const embedUrl = resolveEmbed(node as Element)
+      if (embedUrl) return <EmbedCard url={embedUrl} />
+    }
+    return <p className="text-gray-700 leading-relaxed my-3">{children}</p>
+  },
   ul: ({ children }) => (
     <ul className="my-3 ml-4 space-y-1 list-disc text-gray-700">{children}</ul>
   ),

@@ -36,12 +36,12 @@ export function NewsArticleStructuredData({ article, siteUrl }: Props) {
     dateModified:    article.last_major_update_at ?? article.published_at,
     author: {
       '@type': 'Organization',
-      name:    'DeviceBrief編集部',
+      name:    'Tech Gear Guide編集部',
       url:     siteUrl,
     },
     publisher: {
       '@type': 'Organization',
-      name:    'DeviceBrief',
+      name:    'Tech Gear Guide',
       url:     siteUrl,
       logo: {
         '@type': 'ImageObject',
