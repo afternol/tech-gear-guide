@@ -46,7 +46,6 @@ class ArticleRow:
     category: str
     tags: list[str]
     article_type: str
-    source_reliability: int
     sources: list[dict]
     featured_image_url: str
     featured_image_source: str
@@ -94,7 +93,6 @@ def insert_article(row: ArticleRow) -> tuple[bool, str]:
         "category":              row.category,
         "tags":                  row.tags,
         "article_type":          row.article_type,
-        "source_reliability":    row.source_reliability,
         "sources":               row.sources,
         "featured_image_url":    row.featured_image_url,
         "featured_image_source": row.featured_image_source,
@@ -279,7 +277,6 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
                 category=article.get("category", "general"),
                 tags=article.get("tags", []),
                 article_type=article_type,
-                source_reliability=article.get("source_reliability", 0),
                 sources=article.get("sources", []),
                 featured_image_url=public_img_url,
                 featured_image_source=img_result.get("source", ""),

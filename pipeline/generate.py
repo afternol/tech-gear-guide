@@ -51,7 +51,6 @@ class GeneratedArticle:
     body: str
     seo_description: str
     sources: list[dict]
-    source_reliability: int
     published_at: str
     is_must_catch: bool
     is_leak: bool
@@ -566,7 +565,6 @@ async def generate_article(
                 body=body,
                 seo_description=meta.get("seo_description", ""),
                 sources=[{"title": raw.title, "url": raw.url, "media": raw.source_name}],
-                source_reliability=int(meta.get("source_reliability", 0)),
                 published_at=datetime.now(timezone.utc).isoformat(),
                 is_must_catch=raw.is_must_catch,
                 is_leak=raw.is_leak,
