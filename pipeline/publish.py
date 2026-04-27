@@ -263,6 +263,7 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
                 category=article.get("category", "general"),
                 article_type=article_type,
                 slug=slug,
+                tags=article.get("tags", []),
             )
             # Storageアップロード成功 → Storage URL、失敗 → 直接URL（Unsplash/フォールバック）
             public_img_url = ""
