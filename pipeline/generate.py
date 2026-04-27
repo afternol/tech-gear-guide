@@ -461,14 +461,11 @@ seo_description: [150字以内・更新後の内容を反映]
 
 
 def build_c_type_prompt(a: RawArticle) -> str:
-    reliability = get_reliability(a.source_name)
-    stars       = "★" * reliability + "☆" * (5 - reliability)
     return f"""\
 以下のリーク・噂記事をC型リーク記事にしてください。
 
 【記事仕様】
 - 記事タイプ: C型リーク
-- ソース信頼度: {stars}（{reliability}/5）— {a.source_name}
 - 目標文字数: 1,500〜2,000字
 - 見出し数: H2を3〜5個
 - 語調: です・ます調
@@ -491,11 +488,8 @@ slug: [英数字ハイフン区切り]
 category: {a.category}
 tags: [タグ1, タグ2, タグ3, タグ4]
 article_type: C型リーク
-source_reliability: {reliability}
 seo_description: [150字以内]
 ---END_META---
-
-> **情報の確度: {stars}**（出所: {a.source_name}）
 
 [リード文：2〜3行]
 

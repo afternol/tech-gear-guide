@@ -26,7 +26,6 @@ export interface Article {
   category:              Category
   tags:                  string[]
   article_type:          ArticleType
-  source_reliability:    number
   sources:               ArticleSource[]
   featured_image_url:    string
   featured_image_source: string

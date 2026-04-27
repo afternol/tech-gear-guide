@@ -3,7 +3,7 @@ import type { Article, ArticleSummary, Category } from './types'
 
 const SUMMARY_COLUMNS = [
   'id', 'title', 'slug', 'category', 'tags',
-  'article_type', 'source_reliability',
+  'article_type',
   'featured_image_url', 'featured_image_credit',
   'seo_description', 'published_at', 'last_major_update_at',
   'progressive_phase', 'is_must_catch', 'is_leak',
