@@ -24,9 +24,11 @@ HALLUCINATION_PATTERNS = [
     r"情報によると.*と言われています",
 ]
 
-MIN_BODY_LEN  = 800
-MIN_TITLE_LEN = 15
-MAX_TITLE_LEN = 80
+MIN_BODY_LEN       = 1200   # これ未満はFAIL（公開しない）
+MIN_BODY_LEN_WARN  = 1500   # これ未満はWARN
+MIN_TITLE_LEN      = 15
+MAX_TITLE_LEN      = 80
+MIN_FACTS          = 2      # 数値・固有名詞が少なすぎる記事をWARN
 
 
 def audit_article(article: dict) -> dict:
@@ -53,7 +55,15 @@ def audit_article(article: dict) -> dict:
 
     # 本文検証
     if len(body) < MIN_BODY_LEN:
-        issues.append(f"本文が短すぎます（{len(body)}文字）")
+        issues.append(f"本文が短すぎます（{len(body)}文字・最低{MIN_BODY_LEN}字必要）")
+    elif len(body) < MIN_BODY_LEN_WARN:
+        warnings.append(f"本文がやや短いです（{len(body)}文字・推奨{MIN_BODY_LEN_WARN}字以上）")
+
+    # 情報密度チェック（数値・英数字固有名詞）
+    numbers = re.findall(r'\d+(?:[.,]\d+)?(?:\s*(?:mm|GB|TB|MHz|GHz|W|%|円|ドル|fps|ms))?', body)
+    proper_nouns = re.findall(r'[A-Z][a-zA-Z0-9]{2,}(?:\s+[A-Z][a-zA-Z0-9]+)*', body)
+    if len(numbers) + len(proper_nouns) < MIN_FACTS:
+        warnings.append(f"情報密度が低い可能性（数値:{len(numbers)} 固有名詞:{len(proper_nouns)}）")
 
     # SEO説明
     if not seo:
@@ -124,9 +134,17 @@ def main():
             if r["status"] == "FAIL":
                 print(f"  [{r['slug']}] {r['issues']}")
 
-    # FAILが全体の20%超えたらCI失敗扱い
-    if len(articles) > 0 and fail_ / len(articles) > 0.2:
-        print("FAILが20%を超えています。パイプラインを停止します。")
+    # FAIL記事を generated_articles.jsonl から除外して上書き
+    if fail_ > 0:
+        passed = [a for a, r in zip(articles, reports) if r["status"] != "FAIL"]
+        with open(INPUT_PATH, "w", encoding="utf-8") as f:
+            for a in passed:
+                f.write(json.dumps(a, ensure_ascii=False) + "\n")
+        print(f"FAIL {fail_}件を除外 → {len(passed)}件を publish.py に渡します")
+
+    # FAILが全体の50%超えたらパイプライン停止
+    if len(articles) > 0 and fail_ / len(articles) > 0.5:
+        print("FAILが50%を超えています。パイプラインを停止します。")
         sys.exit(1)
 
 

@@ -41,6 +41,7 @@ export async function generateMetadata(
     title:       article.title,
     description: article.seo_description,
     alternates:  { canonical: url },
+    robots:      article.is_indexed === false ? 'noindex,follow' : 'index,follow',
     openGraph: {
       type:        'article',
       url,

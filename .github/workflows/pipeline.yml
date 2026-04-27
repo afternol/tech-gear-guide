@@ -5,6 +5,7 @@ on:
     - cron: '0 22 * * *'   # JST 07:00 (UTC 22:00 前日)
     - cron: '0 3 * * *'    # JST 12:00 (UTC 03:00)
     - cron: '0 9 * * *'    # JST 18:00 (UTC 09:00)
+    - cron: '0 1 1 * *'    # 月初 JST 10:00 (UTC 01:00) — 月次pruneバッチ
   workflow_dispatch:
     inputs:
       skip_collect:
@@ -156,6 +157,35 @@ jobs:
         if: failure()
         run: |
           echo "パイプライン失敗: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  monthly-prune:
+    name: 月次pruneバッチ
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'schedule' && github.event.schedule == '0 1 1 * *'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+      - name: '🗑️  prune.py — 低PV記事のnoindex・論理削除'
+        working-directory: pipeline
+        run: python prune.py
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      - name: pruneログをアーティファクトに保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prune-log-${{ github.run_number }}
+          path: pipeline/prune_log.jsonl
+          retention-days: 90
+          if-no-files-found: ignore
 
   weekly-refresh:
     name: 週次リフレッシュバッチ

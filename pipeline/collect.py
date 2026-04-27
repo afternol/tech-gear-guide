@@ -120,15 +120,17 @@ LEAK_KEYWORDS = [
 # カテゴリ別バッチ上限
 # ─────────────────────────────────────────────
 
+# Phase A（初期ローンチ）: Google評価保護のため1日20〜30記事に抑制
+# 安定運用後は smartphone:7 ai:4 cpu_gpu:4 windows:3 tablet:2 xr:2 wearable:2 general:2 に戻す
 CATEGORY_LIMITS: dict[str, int] = {
-    "smartphone": 7,
-    "ai":         4,
-    "cpu_gpu":    4,
-    "windows":    3,
-    "tablet":     2,
-    "xr":         2,
-    "wearable":   2,
-    "general":    2,
+    "smartphone": 3,
+    "ai":         2,
+    "cpu_gpu":    2,
+    "windows":    2,
+    "tablet":     1,
+    "xr":         1,
+    "wearable":   1,
+    "general":    1,
 }
 
 # ─────────────────────────────────────────────

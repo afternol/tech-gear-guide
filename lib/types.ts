@@ -39,6 +39,8 @@ export interface Article {
   is_published:          boolean
   is_must_catch:         boolean
   is_leak:               boolean
+  is_indexed:            boolean
+  noindex_reason:        string
 }
 
 export type ArticleSummary = Omit<Article, 'body' | 'sources'>
