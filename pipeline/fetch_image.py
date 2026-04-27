@@ -17,17 +17,6 @@ IMG_DIR.mkdir(exist_ok=True)
 
 # ── カテゴリ別フォールバック ──────────────────────────────────
 
-CATEGORY_QUERIES: dict[str, str] = {
-    "smartphone": "smartphone mobile phone technology",
-    "tablet":     "tablet device ipad technology",
-    "windows":    "laptop windows computer desk",
-    "cpu_gpu":    "computer chip gpu processor silicon",
-    "ai":         "artificial intelligence neural network data",
-    "xr":         "virtual reality headset ar glasses",
-    "wearable":   "smartwatch wearable fitness tracker",
-    "general":    "technology electronics gadget",
-}
-
 FALLBACK_IMAGES: dict[str, str] = {
     "smartphone": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200",
     "tablet":     "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=1200",
@@ -47,43 +36,72 @@ _EN_STOP = {
     'of','in','on','at','to','for','with','by','from','as','into','about',
     'than','after','before','and','or','but','not','if','this','that','it',
     'its','how','what','why','when','which','who','new','now','get','just',
-    'use','using','used','via','vs','vs.','more','most','best','top',
+    'use','using','used','via','vs','more','most','best','top','update',
+    'plan','leak','issue','fix','feature','support','report','review',
 }
 
-# カテゴリ補助ワード（クエリ末尾に加えて検索の文脈を補強）
-_CAT_CONTEXT: dict[str, str] = {
-    "smartphone": "smartphone",
-    "tablet":     "tablet",
-    "windows":    "windows PC",
-    "cpu_gpu":    "processor chip",
-    "ai":         "AI technology",
-    "xr":         "VR AR headset",
-    "wearable":   "wearable smartwatch",
-    "general":    "technology",
+# バージョン番号パターン（Windows 11, iOS 18, RTX 4090 など）
+# スクリーンショットを引き込みやすいため除外する
+_VERSION_RE = re.compile(r'\b(?:\d{1,2}(?:\.\d+)*|[A-Z]\d+)\b')
+
+# カテゴリ別の「抽象的・マテリアル系」クエリ
+# UIスクリーンショットではなく概念・質感・光の写真を取得することで
+# 「写り込んだテキストが記事と食い違う」問題を回避する
+CATEGORY_QUERIES: dict[str, str] = {
+    "smartphone": "smartphone minimal dark abstract light",
+    "tablet":     "tablet device minimal workspace clean",
+    "windows":    "laptop keyboard desk technology minimal",
+    "cpu_gpu":    "computer chip circuit board technology closeup",
+    "ai":         "abstract neural network data light blue",
+    "xr":         "virtual reality headset futuristic technology",
+    "wearable":   "smartwatch wrist fitness minimal dark",
+    "general":    "technology abstract light blue minimal",
+}
+
+# カテゴリ別の文脈語（製品名と組み合わせる抽象語）
+_CAT_ABSTRACT: dict[str, str] = {
+    "smartphone": "mobile technology abstract",
+    "tablet":     "tablet technology minimal",
+    "windows":    "laptop computer technology",
+    "cpu_gpu":    "chip processor technology closeup",
+    "ai":         "artificial intelligence abstract",
+    "xr":         "virtual reality technology",
+    "wearable":   "wearable technology minimal",
+    "general":    "technology abstract",
 }
 
 
 def build_search_query(title: str, tags: list[str], category: str) -> str:
     """
-    タイトル・タグ・カテゴリからUnsplash/Pexels検索クエリを生成する。
-    英数字のプロダクト名・ブランド名を優先して抽出する。
+    タイトル・タグ・カテゴリから検索クエリを生成する。
+    バージョン番号を除外し抽象語を付加することで、
+    UIスクリーンショット画像（テキスト誤表示の原因）を避ける。
     """
-    # タイトルから英数字トークンを抽出（製品名・ブランド名が多い）
+    # タイトルから英数字トークンを抽出し、バージョン番号と汎用語を除去
     title_tokens = re.findall(r'[A-Za-z][a-zA-Z0-9+\-]{1,}', title)
-    title_words  = [w for w in title_tokens if w.lower() not in _EN_STOP and len(w) >= 3]
+    title_words  = [
+        w for w in title_tokens
+        if w.lower() not in _EN_STOP
+        and not _VERSION_RE.fullmatch(w)
+        and len(w) >= 3
+    ]
 
-    # タグから英字タグを抽出
-    tag_words = [t for t in tags if re.match(r'^[a-zA-Z]', t) and t.lower() not in _EN_STOP]
+    # タグから英字タグを抽出（バージョン番号除外）
+    tag_words = [
+        t for t in tags
+        if re.match(r'^[a-zA-Z]', t)
+        and t.lower() not in _EN_STOP
+        and not _VERSION_RE.fullmatch(t)
+    ]
 
-    # 合成: タイトル先頭3語 + タグ先頭2語
-    parts = title_words[:3] + tag_words[:2]
+    # ブランド名・製品名（先頭2語まで）+ 抽象文脈語
+    brand_parts = title_words[:2] + tag_words[:1]
 
-    if not parts:
-        # 英字が全くない場合（日本語タイトルのみ）はカテゴリクエリで代替
+    if not brand_parts:
         return CATEGORY_QUERIES.get(category, CATEGORY_QUERIES["general"])
 
-    context = _CAT_CONTEXT.get(category, "technology")
-    query   = " ".join(parts) + " " + context
+    abstract_ctx = _CAT_ABSTRACT.get(category, "technology abstract")
+    query = " ".join(brand_parts) + " " + abstract_ctx
     return query[:80]
 
 

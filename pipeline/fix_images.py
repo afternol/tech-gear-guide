@@ -29,6 +29,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 DRY_RUN      = "--dry-run" in sys.argv
 ALL_MODE     = "--all"      in sys.argv   # fallback画像も再取得
+FORCE_MODE   = "--force"    in sys.argv   # 全記事を問答無用で再取得
 
 
 def _headers() -> dict:
@@ -71,7 +72,7 @@ def main():
         print("SUPABASE_URL / SUPABASE_SERVICE_KEY が未設定です")
         sys.exit(1)
 
-    mode = "ALL（fallback含む再取得）" if ALL_MODE else "画像なしのみ"
+    mode = "FORCE（全件）" if FORCE_MODE else "ALL（fallback含む）" if ALL_MODE else "画像なしのみ"
     if DRY_RUN:
         print(f"=== DRY-RUN モード / 対象: {mode} ===")
     else:
@@ -79,7 +80,9 @@ def main():
 
     articles = fetch_all_articles()
 
-    if ALL_MODE:
+    if FORCE_MODE:
+        targets = articles
+    elif ALL_MODE:
         targets = [a for a in articles if not a.get("featured_image_url") or is_fallback_url(a.get("featured_image_url", ""))]
     else:
         targets = [a for a in articles if not a.get("featured_image_url")]
