@@ -72,11 +72,6 @@ export function ArticleCard({ article, size = 'default' }: Props) {
         </h3>
         <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
           <span>{timeAgo}</span>
-          {article.is_leak && (
-            <span className="text-amber-600 font-medium">
-              {'★'.repeat(article.source_reliability)}{'☆'.repeat(5 - article.source_reliability)}
-            </span>
-          )}
         </div>
         {article.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
