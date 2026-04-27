@@ -100,6 +100,13 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
+      - name: '🔧 correct.py — 自動修正'
+        if: ${{ env.SKIP_PIPELINE != 'true' }}
+        working-directory: pipeline
+        run: python correct.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
       - name: '🚀 publish.py — Supabase公開'
         if: ${{ env.SKIP_PIPELINE != 'true' && github.event.inputs.dry_run != 'true' }}
         working-directory: pipeline
@@ -122,6 +129,14 @@ jobs:
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| 収集 | ${COLLECTED_COUNT:-N/A} |" >> $GITHUB_STEP_SUMMARY
           echo "| 生成 | ${GENERATED_COUNT:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          if [ -f audit_report.jsonl ]; then
+            APASS=$(grep -c '"status":"PASS"' audit_report.jsonl || true)
+            AWARN=$(grep -c '"status":"WARN"' audit_report.jsonl || true)
+            AFAIL=$(grep -c '"status":"FAIL"' audit_report.jsonl || true)
+            echo "| 監査PASS | $APASS |" >> $GITHUB_STEP_SUMMARY
+            echo "| 監査WARN（修正対象） | $AWARN |" >> $GITHUB_STEP_SUMMARY
+            echo "| 監査FAIL（修正対象） | $AFAIL |" >> $GITHUB_STEP_SUMMARY
+          fi
           if [ -f published_log.jsonl ]; then
             PUB=$(grep -c '"action":"inserted"' published_log.jsonl || true)
             UPD=$(grep -c '"action":"updated"'  published_log.jsonl || true)
