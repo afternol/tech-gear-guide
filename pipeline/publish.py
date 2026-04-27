@@ -264,9 +264,12 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
                 article_type=article_type,
                 slug=slug,
             )
+            # Storageアップロード成功 → Storage URL、失敗 → 直接URL（Unsplash/フォールバック）
             public_img_url = ""
             if img_result.get("local_path"):
                 public_img_url = upload_image(img_result["local_path"], slug) or ""
+            if not public_img_url:
+                public_img_url = img_result.get("url", "")
 
             row = ArticleRow(
                 title=title,

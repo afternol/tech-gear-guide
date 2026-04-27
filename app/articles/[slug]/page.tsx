@@ -124,17 +124,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             {article.title}
           </h1>
 
-          {/* C型: 確度表示 */}
-          {article.article_type === 'C型リーク' && article.source_reliability > 0 && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
-              <span className="font-semibold text-amber-800">情報の確度: </span>
-              <span className="text-amber-700">
-                {'★'.repeat(article.source_reliability)}{'☆'.repeat(5 - article.source_reliability)}
-              </span>
-              <span className="ml-1 text-amber-600 text-xs">（{article.source_reliability}/5）</span>
-            </div>
-          )}
-
           {/* メタ情報 */}
           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
             <time dateTime={article.published_at}>{publishedDate} 公開</time>
