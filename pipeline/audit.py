@@ -67,6 +67,50 @@ MIN_BODY_LEN_WARN = 1500
 MIN_TITLE_LEN     = 15
 MAX_TITLE_LEN     = 80
 
+# 未来イベントの文脈で使われる語句（発売・発表・リリース等）
+_FUTURE_CONTEXT_RE = re.compile(
+    r'(\d{4})年.{0,40}(?:発売|発表|リリース|公開|開催|登場|予定|実装)',
+)
+
+# 内部スコア混入パターン
+_INTERNAL_SCORE_RE = re.compile(r'\b[1-5]/5(?:と|で|に|は|の)')
+_STAR_RATING_RE    = re.compile(r'[★☆]{3,}')
+
+# ─────────────────────────────────────────────
+# 日付整合性チェック
+# ─────────────────────────────────────────────
+
+def check_date_plausibility(body: str, published_at: str) -> list[str]:
+    """published_at と矛盾する年号を検出する（年号ハルシネーション対策）"""
+    issues: list[str] = []
+    try:
+        pub_year = datetime.fromisoformat(published_at).year
+    except Exception:
+        return issues
+
+    for m in _FUTURE_CONTEXT_RE.finditer(body):
+        mentioned_year = int(m.group(1))
+        if mentioned_year < pub_year:
+            context = body[m.start(): m.start() + 60].replace("\n", " ")
+            issues.append(
+                f"年号が過去にずれている可能性: 「{mentioned_year}年」（記事公開: {pub_year}年）"
+                f" — 「{context[:50]}」"
+            )
+    return issues
+
+# ─────────────────────────────────────────────
+# 内部メタデータ混入チェック
+# ─────────────────────────────────────────────
+
+def check_metadata_leaks(body: str) -> list[str]:
+    """旧実装の内部スコア・星表示が本文に混入していないか検出"""
+    issues: list[str] = []
+    if _INTERNAL_SCORE_RE.search(body):
+        issues.append("内部ソーススコア（X/5）が本文に混入している可能性があります")
+    if _STAR_RATING_RE.search(body):
+        issues.append("信頼度星表示（★☆×3以上）が本文に残っている可能性があります")
+    return issues
+
 # ─────────────────────────────────────────────
 # ソース照合
 # ─────────────────────────────────────────────
@@ -116,15 +160,31 @@ _AI_SYSTEM = (
 
 _AI_PROMPT = """\
 以下の【生成記事】と【ソース記事】を比較し、事実確認してください。
+記事公開日は {published_at} です。
 
-確認項目:
-1. ソースにない数値・スペック・日付が記事に含まれていないか
-2. 製品名・モデル名・社名の誤りがないか
-3. ソースと矛盾する表現がないか（例: ソースは「3nm」だが記事は「4nm」）
-4. 推測・憶測をソース情報として断定していないか
+確認項目（重要度順）:
+
+1.【年号・日付の誤り ★最重要】
+  - 発売日・発表日・リリース日の年号がソースと一致しているか
+  - ソースが 2026年の記事なのに記事本文が「2025年」と書いていないか
+  - 逆に過去のことを未来として書いていないか
+
+2.【ソース外トピックへの言及 ★重要】
+  - 「同日に○○が報じられた」など、このソース記事にない別の記事・製品への言及がないか
+  - ソースに書かれていない競合製品との比較がないか
+
+3.【数値・スペックの誤り】
+  - ソースにない数値・スペック・パーセンテージが追加されていないか
+  - ソースの数値と異なる値（例: ソース30%→記事60%）がないか
+
+4.【固有名詞の誤り】
+  - 製品名・モデル名・人物名・メディア名・チャンネル名が正しいか
+
+5.【ソースと矛盾する表現】
+  - ソースと逆の意味・内容になっていないか
 
 JSON形式のみで回答（コードブロック不要）:
-{{"verdict": "accurate"|"minor_issues"|"major_issues", "issues": ["具体的な問題（例: ソースにない○○という数値が記載されている）"], "confidence": 0.0-1.0}}
+{{"verdict": "accurate"|"minor_issues"|"major_issues", "issues": ["具体的な問題（例: ソースは2026年7月発売と記載しているが記事本文では2025年7月22日と誤記）"], "confidence": 0.0-1.0}}
 
 【ソース記事】
 {source_body}
@@ -140,17 +200,19 @@ async def ai_judge_one(
     client: anthropic.AsyncAnthropic,
     article_body: str,
     source_body: str,
+    published_at: str,
     sem: asyncio.Semaphore,
 ) -> dict:
     async with sem:
         prompt = _AI_PROMPT.format(
             source_body=source_body[:3000],
             article_body=article_body[:3000],
+            published_at=published_at[:10],
         )
         try:
             resp = await client.messages.create(
                 model=MODEL,
-                max_tokens=512,
+                max_tokens=700,
                 system=_AI_SYSTEM,
                 messages=[{"role": "user", "content": prompt}],
             )
@@ -170,9 +232,10 @@ async def run_ai_judges(
     sem   = asyncio.Semaphore(MAX_PARALLEL)
     tasks = []
     for a in articles:
-        bodies = _source_bodies(a, source_map)
+        bodies       = _source_bodies(a, source_map)
+        published_at = a.get("published_at", datetime.now(timezone.utc).isoformat())
         if bodies:
-            tasks.append(ai_judge_one(client, a.get("body", ""), bodies[0], sem))
+            tasks.append(ai_judge_one(client, a.get("body", ""), bodies[0], published_at, sem))
         else:
             tasks.append(_no_source_ai())
     return list(await asyncio.gather(*tasks))
@@ -232,6 +295,17 @@ def audit_article(
     da = re.findall(r'[^。！？\n]{5,}(?:だ。|である。|だろう。)', body)
     if len(da) >= 2:
         warnings.append(f"だ・である調が {len(da)} 箇所あります")
+
+    # ── 年号バリデーション ──
+    published_at = article.get("published_at", "")
+    date_issues  = check_date_plausibility(body, published_at)
+    for di in date_issues:
+        issues.append(di)
+
+    # ── 内部メタデータ混入チェック ──
+    leak_issues = check_metadata_leaks(body)
+    for li in leak_issues:
+        issues.append(li)
 
     # ── グラウンディング ──
     src_bodies = _source_bodies(article, source_map)
