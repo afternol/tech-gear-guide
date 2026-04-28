@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Noto_Sans_JP } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { MobileNav } from '@/components/MobileNav'
 
@@ -10,7 +11,7 @@ const notoSansJP = Noto_Sans_JP({
   variable: '--font-noto-sans-jp',
 })
 
-const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com'
+const SITE_URL  = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com').replace(/^﻿/, '').trim()
 const SITE_NAME = 'Tech Gear Guide'
 const SITE_DESC = 'スマホ・PC・GPU・AI・XR・ウェアラブルのテクノロジートレンドを専門的な視点で深掘り解説するテックメディア。'
 
@@ -61,6 +62,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" className={notoSansJP.variable}>
       <body className="min-h-screen bg-gray-50 font-sans antialiased">
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-C82WDQWCF9" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-C82WDQWCF9');
+        `}</Script>
         <Header />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}
