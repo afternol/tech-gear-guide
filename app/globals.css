@@ -5,6 +5,7 @@
 @layer base {
   html {
     font-feature-settings: "palt";
+    scroll-behavior: smooth;
   }
   body {
     @apply text-gray-800;
@@ -24,12 +25,34 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
 
-/* 記事本文のスタイル調整 */
-.article-body > *:first-child {
-  margin-top: 0;
+/* ── 記事本文 ────────────────────────────────── */
+.article-body > *:first-child { margin-top: 0; }
+.article-body > *:last-child  { margin-bottom: 0; }
+
+/* テーブル ストライプ */
+.article-body table tr:nth-child(even) td {
+  background-color: #f9fafb;
 }
-.article-body > *:last-child {
-  margin-bottom: 0;
+
+/* ── ティッカーアニメーション ──────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: marquee 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
 }
