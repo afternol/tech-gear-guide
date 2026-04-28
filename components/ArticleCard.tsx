@@ -11,16 +11,6 @@ interface Props {
   size?: 'default' | 'large'
 }
 
-const CATEGORY_ACCENT: Record<Category, string> = {
-  smartphone: 'bg-blue-500',
-  tablet:     'bg-purple-500',
-  windows:    'bg-sky-500',
-  cpu_gpu:    'bg-green-500',
-  ai:         'bg-orange-500',
-  xr:         'bg-violet-500',
-  wearable:   'bg-teal-500',
-  general:    'bg-gray-400',
-}
 
 const CATEGORY_GRADIENT: Record<Category, string> = {
   smartphone: 'from-blue-700 to-blue-950',
@@ -42,9 +32,6 @@ export function ArticleCard({ article, size = 'default' }: Props) {
       href={`/articles/${article.slug}`}
       className="group block rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-200 bg-white"
     >
-      {/* カテゴリアクセントライン */}
-      <div className={`h-[3px] ${CATEGORY_ACCENT[article.category]}`} />
-
       {/* サムネイル */}
       <div className={`relative overflow-hidden bg-gray-100 ${size === 'large' ? 'aspect-[16/7]' : 'aspect-[16/9]'}`}>
         {article.featured_image_url ? (
