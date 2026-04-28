@@ -2,25 +2,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { ArticleSummary } from '@/lib/types'
 import { CATEGORY_LABELS } from '@/lib/types'
-import type { Category } from '@/lib/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
 
 interface Props {
   article: ArticleSummary
   size?: 'default' | 'large'
-}
-
-
-const CATEGORY_GRADIENT: Record<Category, string> = {
-  smartphone: 'from-blue-700 to-blue-950',
-  tablet:     'from-purple-700 to-purple-950',
-  windows:    'from-sky-700 to-sky-950',
-  cpu_gpu:    'from-green-700 to-green-950',
-  ai:         'from-orange-600 to-orange-950',
-  xr:         'from-violet-700 to-violet-950',
-  wearable:   'from-teal-700 to-teal-950',
-  general:    'from-gray-600 to-gray-900',
 }
 
 export function ArticleCard({ article, size = 'default' }: Props) {
@@ -43,9 +30,7 @@ export function ArticleCard({ article, size = 'default' }: Props) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${CATEGORY_GRADIENT[article.category]} flex items-center justify-center`}>
-            <span className="text-white/50 text-sm font-medium">{CATEGORY_LABELS[article.category]}</span>
-          </div>
+          <div className="w-full h-full bg-gray-100" />
         )}
 
         {/* 注目バッジ */}
