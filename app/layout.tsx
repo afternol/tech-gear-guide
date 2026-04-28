@@ -109,7 +109,7 @@ function Footer() {
           ))}
         </div>
         <div className="flex flex-col md:flex-row justify-between gap-3">
-          <p>© 2026 Tech Gear Guide（Reinforz Insight）</p>
+          <p>© 2026 Tech Gear Guide</p>
           <div className="flex gap-4">
             <a href="/about"        className="hover:text-gray-700">編集方針</a>
             <a href="/privacy"      className="hover:text-gray-700">プライバシーポリシー</a>

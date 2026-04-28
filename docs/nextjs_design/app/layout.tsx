@@ -97,7 +97,7 @@ function Footer() {
   return (
     <footer className="mt-16 border-t border-gray-200 bg-white">
       <div className="max-w-7xl mx-auto px-4 py-8 text-sm text-gray-500 flex flex-col md:flex-row justify-between gap-4">
-        <p>© 2026 DeviceBrief（Reinforz Insight）</p>
+        <p>© 2026 Tech Gear Guide</p>
         <div className="flex gap-4">
           <a href="/about"          className="hover:text-gray-700">編集方針</a>
           <a href="/privacy"        className="hover:text-gray-700">プライバシーポリシー</a>
