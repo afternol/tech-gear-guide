@@ -1396,8 +1396,8 @@ async def run_all_ai_judges(
         web_results = [{"web_verdict": "skipped", "web_issues": [], "sources_checked": [], "confidence": 0.0} for _ in articles]
     else:
         print("  🌐 Pass3: ウェブ検索ファクトチェック実行中...")
-        # Anthropic web_search は並列2件に絞る（APIレートリミット対策）
-        web_sem     = asyncio.Semaphore(2)
+        # Anthropic web_search 並列数（レートリミット次第で調整）
+        web_sem     = asyncio.Semaphore(5)
         web_results = await run_ai_web_fact_judges(client, articles, web_sem)
 
     return fact_results, quality_results, web_results

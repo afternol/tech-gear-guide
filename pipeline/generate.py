@@ -166,7 +166,7 @@ SYSTEM_PROMPT = """\
 2. 数字・スペック・日付・価格はソース通りに記載（改変禁止）
 3. ソースにない情報を推測で補わない
 4. 語調は必ずです・ます調（だ・である調は文末で使用禁止）
-5. 出典URLは必ず記載する
+5. 記事末尾に必ず「## 出典」セクションを設け、`- **メディア名** — [記事タイトル](URL)` の形式で記載する（メディア名・タイトル・URLの3点セット必須）
 6. 発売日・発表日・リリース日などの年号はソース記事の記載を厳守する
    （例：ソースが2026年と書いているなら2026年と記載。絶対に1年ずらさない）
 7. 今回のソース記事に書かれていない別の製品・別のニュースへの言及を禁止する
@@ -562,12 +562,11 @@ seo_description: [150字以内。検索意図に直接回答する内容]
 ## [見出し3]
 [本文]
 
+## 出典
+- **{a.source_name}** — [{a.title}]({a.url})
+
 ---
-
-**出典**
-- [{a.title}]({a.url}) — {a.source_name}
-
-【ソース記事本文】
+【ソース記事本文（参照用）】
 {a.body[:6000]}
 """
 
@@ -634,11 +633,11 @@ seo_description: [150字以内]
 ## [見出し1]
 ...
 
----
-
-**出典**
+## 出典
 {sources_citations}
 
+---
+【ソース記事本文（参照用）】
 {sources_block}
 """
 
@@ -699,15 +698,14 @@ seo_description: [150字以内・更新後の内容を反映]
 ## [見出し1]
 ...
 
----
-
-**出典**
+## 出典
 {sources_citations}
 
-【既存記事の本文】
+---
+【既存記事の本文（参照用）】
 {existing_body[:3000]}
 
-【新しいソース情報】
+【新しいソース情報（参照用）】
 {sources_block}
 """
 
@@ -766,12 +764,11 @@ seo_description: [150字以内]
 ## [見出し1]
 ...
 
+## 出典
+- **{a.source_name}** — [{a.title}]({a.url})
+
 ---
-
-**出典**
-- [{a.title}]({a.url}) — {a.source_name}
-
-【ソース記事本文】
+【ソース記事本文（参照用）】
 {a.body[:6000]}
 """
 
@@ -861,7 +858,8 @@ async def generate_article(
 async def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max", type=int, default=None, help="生成上限（スコア上位N件に絞る）")
+    parser.add_argument("--max",    type=int, default=None, help="生成上限（スコア上位N件に絞る）")
+    parser.add_argument("--offset", type=int, default=0,    help="先頭N件をスキップして生成（補充用）")
     args = parser.parse_args()
 
     if not INPUT_PATH.exists():
@@ -874,6 +872,8 @@ async def main():
             d = json.loads(line)
             raw_articles.append(RawArticle(**{k: d[k] for k in RawArticle.__dataclass_fields__}))
 
+    if args.offset:
+        raw_articles = raw_articles[args.offset:]
     if args.max:
         raw_articles = raw_articles[:args.max]
 

@@ -41,6 +41,7 @@ _FACT_SYSTEM = """\
 あなたはTech Gear Guideの事実確認・修正担当編集長です。
 ソース記事の情報のみを根拠に、指摘された問題点を修正してください。
 出力は必ず指定のMETAフォーマットで行ってください。
+記事末尾の「## 出典」または「**出典**」セクションは必ず維持・出力すること（削除・省略厳禁）。
 """
 
 _FACT_CORRECT_PROMPT = """\
@@ -66,6 +67,7 @@ seo_description: {seo_description}
 
 【修正指示】
 - 問題箇所を修正し、同じ出力フォーマット（---META---〜---END_META---＋本文）で出力する
+- 記事末尾の「## 出典」または「**出典**」セクションは必ず出力に含めること（省略・削除厳禁）
 - slug は絶対に変更しない
 - category は必ず以下の許容値のいずれかにする: smartphone / windows / cpu_gpu / ai / tablet / xr / wearable / general
   不正なカテゴリ（app・electronics_diy・mobile 等）が指定されている場合、最も近い許容値に変更する
@@ -118,6 +120,7 @@ _QUALITY_SYSTEM = """\
 記事の「面白さ・完読率・読者価値」を最大化することが専門です。
 事実・数値・URLは変えずに、文章の品質だけを改善してください。
 出力は必ず指定のMETAフォーマットで行ってください。
+記事末尾の「## 出典」または「**出典**」セクションは必ず維持・出力すること（削除・省略厳禁）。
 """
 
 _QUALITY_IMPROVE_PROMPT = """\
@@ -173,6 +176,7 @@ seo_description: {seo_description}
 
 同じ出力フォーマット（---META---〜---END_META---＋本文）で出力してください。
 slug は絶対に変更しない。本文は最低 {min_len} 文字以上。
+記事末尾の「## 出典」または「**出典**」セクションは必ず出力に含めること（省略・削除厳禁）。
 category は必ず以下の許容値のいずれかにすること: smartphone / windows / cpu_gpu / ai / tablet / xr / wearable / general
 ソース記事のメタ情報（著者名・文字数・英語カテゴリ名・関連キーワード・記事URL等）が本文に含まれている場合は完全に削除すること。
 タイトルで「N個/N点/Nつ/N選/Nポイント/N理由」と数を宣言しているのに本文で未列挙の場合は、本文に番号付きで列挙すること。
@@ -326,7 +330,7 @@ async def correct_one(
                         tags=tags_str,
                         article_type=current.get("article_type", "A型速報"),
                         seo_description=current.get("seo_description", ""),
-                        body=current.get("body", "")[:4000],
+                        body=current.get("body", "")[:5500],
                         min_len=MIN_BODY_LEN,
                     )
                     text = await _call_claude(client, _FACT_SYSTEM, prompt, slug, "事実修正")
@@ -366,7 +370,7 @@ async def correct_one(
                 tags=tags_str,
                 article_type=current.get("article_type", "A型速報"),
                 seo_description=current.get("seo_description", ""),
-                body=current.get("body", "")[:4000],
+                body=current.get("body", "")[:5500],
                 min_len=MIN_BODY_LEN,
             )
             text = await _call_claude(client, _QUALITY_SYSTEM, prompt, slug, "品質改善")
