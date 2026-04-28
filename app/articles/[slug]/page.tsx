@@ -153,11 +153,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               priority
               sizes="(max-width: 768px) 100vw, 768px"
             />
-            {article.featured_image_credit && (
-              <p className="absolute bottom-2 right-2 text-xs text-white/70 bg-black/40 px-2 py-0.5 rounded">
-                {article.featured_image_credit}
-              </p>
-            )}
           </div>
         )}
 
@@ -182,11 +177,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         )}
 
-        {/* 免責事項 */}
-        <p className="mt-6 text-xs text-gray-400 leading-relaxed">
-          本記事はAI支援により作成されています。情報の正確性には最大限注意していますが、
-          最終確認は各メーカー・公式サイトでお願いします。
-        </p>
+
       </div>
 
       {/* 関連記事 */}
