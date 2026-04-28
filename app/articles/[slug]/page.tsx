@@ -9,9 +9,10 @@ import { ArticleBody } from '@/components/ArticleBody'
 import { ArticleCard } from '@/components/ArticleCard'
 import { NewsArticleStructuredData, BreadcrumbStructuredData } from '@/components/StructuredData'
 import { ReadingProgress } from '@/components/ReadingProgress'
+import { ViewTracker } from '@/components/ViewTracker'
 import { CATEGORY_LABELS, CATEGORY_COLORS, ARTICLE_TYPE_LABELS } from '@/lib/types'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com'
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com').replace(/^﻿/, '').trim()
 
 export const revalidate = 300
 
@@ -76,6 +77,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     <>
       {/* 読書進捗バー */}
       <ReadingProgress />
+      {/* PV計測 */}
+      <ViewTracker slug={article.slug} />
 
       {/* 構造化データ */}
       <NewsArticleStructuredData article={article} siteUrl={SITE_URL} />
