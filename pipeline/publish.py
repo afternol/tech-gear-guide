@@ -16,6 +16,9 @@ from typing import Optional
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import httpx
 from fetch_image import fetch_article_image
 

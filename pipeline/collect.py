@@ -6,14 +6,21 @@ RSS収集 → 本文取得 → スコアリング → 重複排除 → collected
 
 import asyncio
 import hashlib
+import io
 import json
 import re
+import sys
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+from dotenv import load_dotenv
+load_dotenv()
 
 import feedparser
 import httpx
