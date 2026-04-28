@@ -24,22 +24,6 @@ export async function generateStaticParams() {
   }
 }
 
-function extractKeyPoints(body: string): string[] {
-  const truncated = body.split(/\n## (?:Q&A|よくある質問|\*\*出典)/)[0]
-  const lines  = truncated.split('\n')
-  const points: string[] = []
-  for (const line of lines) {
-    const m = line.match(/^[-*]\s+(.+)/)
-    if (m) {
-      const text = m[1].replace(/\*\*/g, '').trim()
-      if (text.length > 15 && text.length < 200) {
-        points.push(text)
-        if (points.length >= 3) break
-      }
-    }
-  }
-  return points
-}
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -81,7 +65,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound()
 
   const related    = await getRelatedArticles(article)
-  const keyPoints  = extractKeyPoints(article.body)
 
   const publishedDate = format(new Date(article.published_at), 'yyyy年M月d日', { locale: ja })
   const updatedDate   = article.last_major_update_at
@@ -166,23 +149,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               priority
               sizes="(max-width: 768px) 100vw, 768px"
             />
-          </div>
-        )}
-
-        {/* ポイントボックス */}
-        {keyPoints.length > 0 && (
-          <div className="mb-7 p-4 sm:p-5 bg-blue-50 border border-blue-200 rounded-xl">
-            <p className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <span>📌</span> この記事のポイント
-            </p>
-            <ul className="space-y-2">
-              {keyPoints.map((point, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-gray-800 leading-relaxed">
-                  <span className="text-blue-500 font-bold mt-0.5 shrink-0">✓</span>
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 
