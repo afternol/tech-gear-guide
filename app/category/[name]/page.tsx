@@ -45,7 +45,7 @@ export async function generateMetadata(
   const label = CATEGORY_LABELS[category]
   return {
     title:       `${label}の最新ニュース`,
-    description: `${label}に関する最新テックニュース。海外権威メディアの情報を日本語で解説。`,
+    description: `${label}に関する最新テックニュース。専門的な視点で深掘り解説。`,
   }
 }
 

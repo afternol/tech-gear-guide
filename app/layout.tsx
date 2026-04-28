@@ -12,7 +12,7 @@ const notoSansJP = Noto_Sans_JP({
 
 const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com'
 const SITE_NAME = 'Tech Gear Guide'
-const SITE_DESC = 'スマホ・PC・GPU・AI・XR・ウェアラブルのテクノロジートレンドを専門的な視点で深掘り解説する日本語テックメディア。'
+const SITE_DESC = 'スマホ・PC・GPU・AI・XR・ウェアラブルのテクノロジートレンドを専門的な視点で深掘り解説するテックメディア。'
 
 export const metadata: Metadata = {
   metadataBase:  new URL(SITE_URL),
@@ -132,7 +132,7 @@ function Footer() {
               <span className="text-white font-bold text-sm">Tech Gear Guide</span>
             </a>
             <p className="text-xs text-gray-500 leading-relaxed">
-              テクノロジーの動向を専門的な視点で深掘り・解説する日本語メディア。スマホ・PC・AI・XRのトレンドから製品選びまでサポートします。
+              テクノロジーの動向を専門的な視点で深掘り・解説するメディア。スマホ・PC・AI・XRのトレンドから製品選びまでサポートします。
             </p>
           </div>
 

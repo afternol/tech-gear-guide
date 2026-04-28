@@ -47,7 +47,7 @@ export async function GET(
   <channel>
     <title>${feedTitle}</title>
     <link>${SITE_URL}</link>
-    <description>スマートフォン・GPU・Windows・AIの最新テックニュースを日本語で</description>
+    <description>スマートフォン・GPU・Windows・AIの最新テックニュースを専門的な視点で解説</description>
     <language>ja</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/feed/${rawCategory}.xml" rel="self" type="application/rss+xml" />
