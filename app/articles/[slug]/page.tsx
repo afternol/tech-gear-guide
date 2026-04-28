@@ -128,7 +128,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </span>
             )}
             {article.is_must_catch && (
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-500 text-white">
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-600 text-white">
                 注目
               </span>
             )}
@@ -215,7 +215,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div>
             <p className="font-bold text-gray-900 text-sm">Tech Gear Guide 編集部</p>
             <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-              海外テックメディア20社以上を毎日モニタリング。スマホ・PC・AI・XRの最新情報を正確・迅速にお届けします。
+              最新テクノロジーの動向を独自の視点で分析・解説しています。製品スペックの深読みから業界構造の読み解きまで、テック選びに役立つ洞察を心がけています。
             </p>
           </div>
         </div>

@@ -63,7 +63,7 @@ export function ArticleCard({ article, size = 'default' }: Props) {
 
         {/* 注目バッジ */}
         {article.is_must_catch && (
-          <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
+          <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-sm">
             注目
           </span>
         )}

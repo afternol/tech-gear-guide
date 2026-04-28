@@ -19,8 +19,8 @@ export default async function HomePage() {
     <>
       {/* ── Breaking News Ticker ─────────────────────────────── */}
       {mustCatch.length > 0 && (
-        <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-8 bg-red-600 flex items-center overflow-hidden h-10 select-none">
-          <span className="shrink-0 bg-red-800 text-white text-xs font-bold px-4 h-full flex items-center uppercase tracking-widest">
+        <div className="-mx-4 sm:-mx-6 lg:-mx-8 mb-8 bg-slate-800 flex items-center overflow-hidden h-10 select-none">
+          <span className="shrink-0 bg-blue-600 text-white text-xs font-bold px-4 h-full flex items-center uppercase tracking-widest">
             速報
           </span>
           <div className="flex-1 overflow-hidden">
@@ -43,8 +43,8 @@ export default async function HomePage() {
       {mustCatch.length > 0 && (
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <h2 className="text-xs font-bold text-red-600 uppercase tracking-widest">注目ニュース</h2>
+            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <h2 className="text-xs font-bold text-blue-600 uppercase tracking-widest">注目ニュース</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -80,7 +80,7 @@ export default async function HomePage() {
                     {formatDistanceToNow(new Date(mustCatch[0].published_at), { addSuffix: true, locale: ja })}
                   </p>
                 </div>
-                <span className="absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-full bg-red-500 text-white shadow">
+                <span className="absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-600 text-white shadow">
                   注目
                 </span>
               </a>
