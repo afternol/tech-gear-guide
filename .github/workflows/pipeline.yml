@@ -110,6 +110,8 @@ jobs:
           NEXTJS_REVALIDATE_SECRET: ${{ secrets.NEXTJS_REVALIDATE_SECRET }}
           SITE_SITEMAP_URL:         ${{ secrets.SITE_SITEMAP_URL }}
           UNSPLASH_ACCESS_KEY:      ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          NEXT_PUBLIC_SITE_URL:     ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          INDEXNOW_KEY:             967d6d6637f240f62434afecf3470a31
 
       - name: 実行結果サマリー
         if: always()

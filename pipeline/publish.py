@@ -31,6 +31,8 @@ SUPABASE_SERVICE_KEY     = os.getenv("SUPABASE_SERVICE_KEY", "")
 NEXTJS_REVALIDATE_URL    = os.getenv("NEXTJS_REVALIDATE_URL", "")
 NEXTJS_REVALIDATE_SECRET = os.getenv("NEXTJS_REVALIDATE_SECRET", "")
 SITE_SITEMAP_URL         = os.getenv("SITE_SITEMAP_URL", "")
+INDEXNOW_KEY             = os.getenv("INDEXNOW_KEY", "967d6d6637f240f62434afecf3470a31")
+SITE_URL                 = (os.getenv("NEXT_PUBLIC_SITE_URL") or "https://techgear-guide.com").rstrip("/")
 
 INPUT_PATH       = Path("generated_articles.jsonl")
 LOG_PATH         = Path("published_log.jsonl")
@@ -168,7 +170,7 @@ def upload_image(local_path: str, slug: str) -> Optional[str]:
     return None
 
 # ─────────────────────────────────────────────
-# ISR revalidate / Sitemap ping
+# ISR revalidate / IndexNow
 # ─────────────────────────────────────────────
 
 def revalidate(slug: str) -> bool:
@@ -184,15 +186,32 @@ def revalidate(slug: str) -> bool:
     except Exception:
         return False
 
-async def ping_sitemap() -> bool:
-    if not SITE_SITEMAP_URL:
-        return True
+async def ping_indexnow(slugs: list[str]) -> int:
+    """公開済みURLをIndexNow経由でBingへ一括通知。成功件数を返す。"""
+    if not slugs or not INDEXNOW_KEY:
+        return 0
+    host = SITE_URL.replace("https://", "").replace("http://", "")
+    url_list = [f"{SITE_URL}/articles/{s}" for s in slugs]
+    payload = {
+        "host":        host,
+        "key":         INDEXNOW_KEY,
+        "keyLocation": f"{SITE_URL}/{INDEXNOW_KEY}.txt",
+        "urlList":     url_list,
+    }
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get("https://www.google.com/ping", params={"sitemap": SITE_SITEMAP_URL})
-            return r.status_code == 200
-    except Exception:
-        return False
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(
+                "https://api.indexnow.org/indexnow",
+                json=payload,
+                headers={"Content-Type": "application/json; charset=utf-8"},
+            )
+            if r.status_code in (200, 202):
+                return len(slugs)
+            print(f"  ⚠️  IndexNow HTTP {r.status_code}: {r.text[:80]}")
+            return 0
+    except Exception as e:
+        print(f"  ⚠️  IndexNow 送信失敗: {e}")
+        return 0
 
 def is_major_update(old_body: str, new_body: str) -> bool:
     old_len = len(old_body)
@@ -219,7 +238,6 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
             "reason":       "",
             "action":       "",
             "image_src":    "",
-            "sitemap_ping": False,
             "published_at": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -232,9 +250,8 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
             print(f"  ⏭️  スキップ（重複）: {slug}")
             return log
 
-        new_body   = article.get("body", "")
-        needs_ping = False
-        action     = ""
+        new_body = article.get("body", "")
+        action   = ""
 
         # Progressive更新（B型続報）
         if exists and progressive_phase is not None:
@@ -253,8 +270,7 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
                 log["reason"] = err
                 print(f"  ❌ UPDATE失敗: {slug} — {err[:80]}")
                 return log
-            action     = "updated"
-            needs_ping = major
+            action = "updated"
             print(f"  🔄 Progressive更新（Phase{progressive_phase}{'・大型' if major else ''}）: {title[:50]}")
 
         # 新規INSERT
@@ -295,16 +311,11 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
                 log["reason"] = err
                 print(f"  ❌ INSERT失敗: {slug} — {err[:80]}")
                 return log
-            action         = "inserted"
+            action           = "inserted"
             log["image_src"] = img_result.get("source", "")
-            needs_ping     = is_must_catch or "C型" in article_type
             print(f"  ✅ 公開: {title[:55]}")
 
         revalidate(slug)
-
-        if needs_ping:
-            pinged             = await ping_sitemap()
-            log["sitemap_ping"] = pinged
 
         log["status"] = "published"
         log["action"] = action
@@ -339,14 +350,19 @@ async def main():
     updated  = sum(1 for l in logs if l.get("action") == "updated")
     skipped  = sum(1 for l in logs if l.get("action") == "skipped")
     failed   = sum(1 for l in logs if l["status"] == "failed")
-    pinged   = sum(1 for l in logs if l.get("sitemap_ping"))
+
+    # 新規公開した全URLをIndexNowでBingへ一括通知
+    new_slugs = [l["slug"] for l in logs if l.get("action") == "inserted" and l["slug"]]
+    indexed   = await ping_indexnow(new_slugs)
+    if indexed:
+        print(f"  📡 IndexNow送信: {indexed} URL → Bing")
 
     print("\n" + "=" * 60)
     print(f"  ✅ 新規公開        : {inserted} 件")
     print(f"  🔄 Progressive更新 : {updated} 件")
     print(f"  ⏭️  スキップ        : {skipped} 件")
     print(f"  ❌ 失敗            : {failed} 件")
-    print(f"  Sitemap ping送信   : {pinged} 回")
+    print(f"  📡 IndexNow送信    : {indexed} URL")
 
     if failed > 0:
         print("\n── 失敗詳細 ──")
