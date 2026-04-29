@@ -27,14 +27,12 @@ export default function AboutPage() {
           <p>
             当メディアは、信頼性の高い一次情報ソース（メーカー公式発表・プレスリリース・国内外の主要テックメディアの報道）を
             収集・分析したうえで記事を作成しています。
-            AIを活用した記事生成を行っていますが、掲載する情報はすべてソースで確認できる内容に限定しており、
-            憶測や根拠のない情報は掲載しません。
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-bold text-gray-900 mb-3">記事の種別</h2>
-          <ul className="space-y-3">
+          <ul className="space-y-3 mb-6">
             <li>
               <span className="font-semibold text-gray-900">速報</span>
               　― 公式発表・信頼できる報道を基にした最速ニュース記事
@@ -48,22 +46,41 @@ export default function AboutPage() {
               　― 業界内情報・コードなどに基づく未発表情報（リーク情報として明記）
             </li>
           </ul>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">更新・訂正ポリシー</h2>
-          <p>
-            公式発表や後続報道によって内容が更新・訂正される場合は、記事内に「更新」日時を明記したうえで内容を修正します。
-            重要な誤りがあった場合は、訂正内容を記事内に明示します。
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">広告・アフィリエイト</h2>
-          <p>
-            当メディアでは現在、記事コンテンツとスポンサードコンテンツを明確に区別しています。
-            将来的に広告を掲載する場合は、その旨を明示します。
-          </p>
+          <h3 className="text-base font-bold text-gray-900 mb-3">カバーカテゴリー</h3>
+          <ul className="space-y-2.5">
+            <li>
+              <span className="font-semibold text-gray-900">スマートフォン</span>
+              　― iPhone・Galaxy・Pixel・Xperia・OPPO・Motorola・Xiaomiなど、あらゆるメーカー・機種の最新動向。スマホアプリやOS（iOS・Android）のアップデート情報も含みます。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">タブレット</span>
+              　― iPad・Galaxy Tab・Surface・Lenovo Tab・Xiaomi Padなど、各社タブレット端末の新製品・アップデート情報。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">Windows</span>
+              　― Windows 11/12のアップデート、CoPilot+ PC、SurfaceなどMicrosoft製品および周辺ニュース。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">CPU・GPU</span>
+              　― Intel・AMD・NVIDIAの最新チップ、Apple Silicon、Snapdragonなどプロセッサ・グラフィクス全般のベンチマーク・発売情報。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">AI</span>
+              　― ChatGPT・Gemini・Claude・Llama・Copilotなど主要AIモデルの新機能・リリース情報、生成AIサービスの動向。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">XR・AR・VR</span>
+              　― Apple Vision Pro・Meta Quest・PlayStation VRなどの空間コンピューティング・ARグラスの最新情報。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">ウェアラブル</span>
+              　― Apple Watch・Galaxy Watch・AirPods・スマートバンドなどウェアラブルデバイス全般。
+            </li>
+            <li>
+              <span className="font-semibold text-gray-900">周辺機器・アプリ</span>
+              　― キーボード・マウス・モニター・ヘッドフォン・Webカメラなどの周辺機器、注目アプリのアップデート情報。
+            </li>
+          </ul>
         </section>
 
         <section>
