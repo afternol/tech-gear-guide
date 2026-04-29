@@ -8,6 +8,7 @@ export type Category =
   | 'ai'
   | 'xr'
   | 'wearable'
+  | 'peripheral'
   | 'general'
 
 export type ArticleType = 'A型速報' | 'B型深掘り' | 'C型リーク'
@@ -52,6 +53,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   ai:         'AI',
   xr:         'XR・AR・VR',
   wearable:   'ウェアラブル',
+  peripheral: '周辺機器・アプリ',
   general:    'その他',
 }
 
@@ -63,6 +65,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   ai:         'bg-orange-100 text-orange-800',
   xr:         'bg-violet-100 text-violet-800',
   wearable:   'bg-teal-100 text-teal-800',
+  peripheral: 'bg-amber-100 text-amber-800',
   general:    'bg-gray-100 text-gray-700',
 }
 

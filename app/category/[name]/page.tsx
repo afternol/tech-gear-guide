@@ -7,7 +7,7 @@ import type { Category } from '@/lib/types'
 
 export const revalidate = 1800
 
-const VALID_CATEGORIES: Category[] = ['smartphone', 'tablet', 'windows', 'cpu_gpu', 'ai', 'xr', 'wearable', 'general']
+const VALID_CATEGORIES: Category[] = ['smartphone', 'tablet', 'windows', 'cpu_gpu', 'ai', 'xr', 'wearable', 'peripheral', 'general']
 const PER_PAGE = 20
 
 

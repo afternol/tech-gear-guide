@@ -47,6 +47,7 @@ export const metadata: Metadata = {
         { url: '/feed/ai.xml',         title: `${SITE_NAME} AI` },
         { url: '/feed/xr.xml',         title: `${SITE_NAME} XR・AR・VR` },
         { url: '/feed/wearable.xml',   title: `${SITE_NAME} ウェアラブル` },
+        { url: '/feed/peripheral.xml', title: `${SITE_NAME} 周辺機器・アプリ` },
       ],
     },
   },
@@ -87,6 +88,7 @@ const NAV_ITEMS = [
   { label: 'AI',           href: '/category/ai' },
   { label: 'XR・AR・VR',  href: '/category/xr' },
   { label: 'ウェアラブル', href: '/category/wearable' },
+  { label: '周辺機器',     href: '/category/peripheral' },
 ]
 
 function Header() {

@@ -128,6 +128,22 @@ MUST_CATCH: dict[str, list[str]] = {
         "galaxy buds 4", "galaxy buds 3",
         "fitbit", "garmin",
     ],
+    "peripheral": [
+        # キーボード・マウス
+        "mx keys", "mx master", "logitech g pro",
+        "razer blackwidow", "razer deathadder",
+        "corsair k100", "hyperx alloy",
+        # ヘッドフォン・ヘッドセット
+        "sony wh-1000xm", "sony wf-1000xm",
+        "bose quietcomfort", "jabra evolve",
+        # モニター
+        "lg ultragear", "samsung odyssey",
+        "dell ultrasharp", "asus rog swift",
+        # Webカメラ・マイク
+        "blue yeti", "elgato facecam",
+        # コントローラー
+        "dualsense edge", "xbox elite controller",
+    ],
     "general": [],
 }
 
@@ -170,9 +186,10 @@ CATEGORY_LIMITS: dict[str, int] = {
     "windows":    4,   # 重視
     "tablet":     3,   # 重視
     "ai":         2,
+    "peripheral": 2,   # 周辺機器・アプリ
     "xr":         1,
     "wearable":   1,
-    "general":    0,   # 上記カテゴリ優先のため0に
+    "general":    0,
 }
 
 # ─────────────────────────────────────────────
@@ -245,6 +262,10 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "oppo", "realme", "honor", "vivo",
         "zenfone", "rog phone", "nothing phone",
         "fold", "flip phone", "clamshell phone",
+        # スマホアプリ・OS
+        "ios 18", "ios 19", "android 15", "android 16",
+        "app store", "google play",
+        "instagram update", "whatsapp update", "tiktok update",
     ],
     "tablet":     [
         "ipad", "galaxy tab", "surface pro", "surface go", "pixel tablet", "android tablet",
@@ -260,6 +281,23 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
                    "virtual reality", "augmented reality", "hololens", "psvr"],
     "wearable":   ["apple watch", "galaxy watch", "pixel watch", "smartwatch", "airpods",
                    "galaxy buds", "fitness tracker", "earbuds"],
+    "peripheral": [
+        # キーボード・マウス
+        "mechanical keyboard", "wireless keyboard", "gaming keyboard",
+        "gaming mouse", "wireless mouse", "trackpad",
+        "logitech", "logicool", "razer", "corsair", "hyperx", "steelseries",
+        # ヘッドフォン・スピーカー
+        "headphone", "headset", "noise cancell",
+        "sony wh", "sony wf", "bose quietcomfort", "jabra",
+        # モニター・ディスプレイ
+        "gaming monitor", "oled monitor", "4k monitor", "ultrawide",
+        # Webカメラ・マイク・配信機器
+        "webcam", "stream deck", "capture card", "blue yeti",
+        # ゲームコントローラー
+        "dualsense", "xbox controller", "pro controller",
+        # USB・充電
+        "usb hub", "usb-c hub", "docking station", "wireless charger",
+    ],
 }
 
 def infer_category(title: str, default_cat: str) -> str:

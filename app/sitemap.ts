@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getAllSlugs } from '@/lib/articles'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devicebrief.com'
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devicebrief.com').replace(/^﻿/, '').trim()
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getAllSlugs().catch(() => [])
@@ -20,8 +20,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/category/cpu_gpu`,        lastModified: new Date(), changeFrequency: 'daily',   priority: 0.8 },
     { url: `${SITE_URL}/category/windows`,        lastModified: new Date(), changeFrequency: 'daily',   priority: 0.8 },
     { url: `${SITE_URL}/category/tablet`,         lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
-    { url: `${SITE_URL}/category/xr`,            lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
-    { url: `${SITE_URL}/category/wearable`,      lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
+    { url: `${SITE_URL}/category/xr`,             lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
+    { url: `${SITE_URL}/category/wearable`,       lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
+    { url: `${SITE_URL}/category/peripheral`,     lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
     { url: `${SITE_URL}/category/general`,        lastModified: new Date(), changeFrequency: 'daily',   priority: 0.6 },
     { url: `${SITE_URL}/about`,                   lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
   ]
