@@ -42,12 +42,13 @@ except ImportError:
 # 定数
 # ─────────────────────────────────────────────
 
-MIN_BODY_LEN   = 500
-COLLECT_HOURS  = 24
-PLAYWRIGHT_SEM = 3
-OUTPUT_PATH    = Path("collected_articles.jsonl")
-CACHE_PATH     = Path("processed_urls_cache.json")
-CACHE_MAX      = 2000
+MIN_BODY_LEN        = 500
+COLLECT_HOURS       = 24
+PLAYWRIGHT_SEM      = 3
+OUTPUT_PATH         = Path("collected_articles.jsonl")
+CACHE_PATH          = Path("processed_urls_cache.json")
+CACHE_MAX           = 2000
+PUBLISHED_LOOKBACK_DAYS = 7   # 既投稿記事との重複チェック対象期間
 
 BROWSER_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -330,6 +331,36 @@ def _is_within_24h(pub_dt: Optional[datetime]) -> bool:
 # 処理済みURLキャッシュ
 # ─────────────────────────────────────────────
 
+def fetch_published_titles() -> list[frozenset[str]]:
+    """Supabaseから直近PUBLISHED_LOOKBACK_DAYS日分の公開済みタイトルのトークンセットを取得。"""
+    url = os.getenv("SUPABASE_URL", "")
+    key = os.getenv("SUPABASE_SERVICE_KEY", "")
+    if not url or not key:
+        return []
+    try:
+        from datetime import timezone as _tz
+        since = (datetime.now(_tz.utc) - timedelta(days=PUBLISHED_LOOKBACK_DAYS)).isoformat()
+        headers = {
+            "apikey":        key,
+            "Authorization": f"Bearer {key}",
+        }
+        params = {
+            "select":         "title",
+            "is_published":   "eq.true",
+            "published_at":   f"gte.{since}",
+            "limit":          "500",
+        }
+        resp = httpx.get(f"{url}/rest/v1/articles", headers=headers, params=params, timeout=10)
+        if resp.status_code == 200:
+            titles = [row["title"] for row in resp.json() if row.get("title")]
+            tokens = [_title_tokens(t) for t in titles]
+            print(f"既投稿タイトル取得: {len(tokens)} 件（過去{PUBLISHED_LOOKBACK_DAYS}日）")
+            return tokens
+    except Exception as e:
+        print(f"  ⚠️  既投稿タイトル取得失敗（スキップ）: {e}")
+    return []
+
+
 def load_processed_urls() -> set[str]:
     if CACHE_PATH.exists():
         return set(json.loads(CACHE_PATH.read_text(encoding="utf-8")))
@@ -492,10 +523,13 @@ async def fetch_body(url: str, src: Source, rss_body: str, browser) -> tuple[str
 # 3層重複排除
 # ─────────────────────────────────────────────
 
-def dedup_and_limit(articles: list[RawArticle]) -> list[RawArticle]:
+def dedup_and_limit(
+    articles: list[RawArticle],
+    published_tokens: list[frozenset[str]] | None = None,
+) -> list[RawArticle]:
     articles    = sorted(articles, key=lambda x: -x.score)
     seen_urls:  set[str]             = set()
-    seen_tokens: list[frozenset[str]] = []
+    seen_tokens: list[frozenset[str]] = list(published_tokens or [])
     cat_counts: Counter              = Counter()
     result:     list[RawArticle]     = []
 
@@ -506,7 +540,7 @@ def dedup_and_limit(articles: list[RawArticle]) -> list[RawArticle]:
         title_lower = a.title.lower()
         if any(k in title_lower for k in GLOBAL_SKIP_KEYWORDS):
             continue
-        # トークンオーバーラップによる重複検出
+        # トークンオーバーラップによる重複検出（バッチ内 + 既投稿記事）
         tokens = _title_tokens(a.title)
         if _is_topic_dup(tokens, seen_tokens):
             continue
@@ -562,7 +596,8 @@ async def main():
 
         await browser.close()
 
-    deduped = dedup_and_limit(all_articles)
+    published_tokens = fetch_published_titles()
+    deduped = dedup_and_limit(all_articles, published_tokens)
     print(f"\n重複排除・上限適用: {len(all_articles)} → {len(deduped)} 件")
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:

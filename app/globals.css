@@ -33,7 +33,18 @@
   }
 }
 
+/* ── 最小フォントサイズ 16px 強制 ───────────── */
+.text-xs,
+.text-sm {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
 /* ── 記事本文 ────────────────────────────────── */
+.article-body {
+  font-size: 1rem;       /* 16px ベース */
+  line-height: 1.875;
+}
 .article-body > *:first-child { margin-top: 0; }
 .article-body > *:last-child  { margin-bottom: 0; }
 

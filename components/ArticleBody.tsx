@@ -35,7 +35,7 @@ const components: Components = {
       const embedUrl = resolveEmbed(node as Element)
       if (embedUrl) return <EmbedCard url={embedUrl} />
     }
-    return <p className="text-gray-700 leading-relaxed my-4 text-[15px]">{children}</p>
+    return <p className="text-gray-700 leading-relaxed my-4 text-base">{children}</p>
   },
   ul: ({ children }) => (
     <ul className="my-4 ml-5 space-y-1.5 list-disc text-gray-700">{children}</ul>
@@ -44,23 +44,23 @@ const components: Components = {
     <ol className="my-4 ml-5 space-y-1.5 list-decimal text-gray-700">{children}</ol>
   ),
   li: ({ children }) => (
-    <li className="leading-relaxed text-[15px]">{children}</li>
+    <li className="leading-relaxed text-base">{children}</li>
   ),
   table: ({ children }) => (
     <div className="my-6 overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-      <table className="min-w-full text-sm border-collapse">{children}</table>
+      <table className="min-w-full text-base border-collapse">{children}</table>
     </div>
   ),
   thead: ({ children }) => (
     <thead className="bg-gray-50 border-b border-gray-200">{children}</thead>
   ),
   th: ({ children }) => (
-    <th className="px-4 py-3 text-left font-bold text-gray-700 text-xs uppercase tracking-wider whitespace-nowrap">
+    <th className="px-4 py-3 text-left font-bold text-gray-700 text-base uppercase tracking-wider whitespace-nowrap">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="px-4 py-3 text-gray-700 border-t border-gray-100">{children}</td>
+    <td className="px-4 py-3 text-base text-gray-700 border-t border-gray-100">{children}</td>
   ),
   blockquote: ({ children }) => (
     <blockquote className="my-6 pl-5 border-l-4 border-blue-500 bg-blue-50 py-3 pr-4 rounded-r-xl text-gray-700 not-italic">
@@ -82,7 +82,7 @@ const components: Components = {
   ),
   hr: () => <hr className="my-8 border-gray-200" />,
   code: ({ children }) => (
-    <code className="bg-gray-100 text-gray-800 text-sm px-1.5 py-0.5 rounded font-mono">
+    <code className="bg-gray-100 text-gray-800 text-base px-1.5 py-0.5 rounded font-mono">
       {children}
     </code>
   ),
