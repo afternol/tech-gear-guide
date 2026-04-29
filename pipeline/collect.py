@@ -132,22 +132,31 @@ GLOBAL_SKIP_KEYWORDS: tuple[str, ...] = (
     "limited time offer", "amazon deal", "amazon sale",
     # 米国通信キャリア固有記事（日本読者に関係なし）
     "verizon", "at&t", "comcast", "xfinity", "boost mobile", "spectrum mobile",
+    "t-mobile", "cricket wireless", "us cellular", "metro by t-mobile", "straight talk",
+    "tracfone", "consumer cellular", "visible wireless",
+    # 米国教育・特定市場向け（日本市場に関係なし）
+    "graphing calculator", "ti-84", "ti-83", "ti-89", "casio fx-",
+    # 米国規制・行政固有記事
+    "fcc ruling", "fcc fine", "fcc approved", "fcc certification",
+    # 米国ISP・ケーブル会社
+    "cable provider", "cable company", "internet provider",
 )
 
 # ─────────────────────────────────────────────
 # カテゴリ別バッチ上限
 # ─────────────────────────────────────────────
 
-# 1日30記事運用: generate.py --max 30 と組み合わせて使用
+# 1回10記事・1日3回30記事運用: generate.py --max 10 と組み合わせて使用
+# 合計16件（バッファ）→ generate.py --max 10 で絞る
 CATEGORY_LIMITS: dict[str, int] = {
-    "smartphone": 8,
-    "ai":         5,
-    "cpu_gpu":    4,
-    "windows":    4,
-    "tablet":     3,
-    "xr":         2,
-    "wearable":   2,
-    "general":    2,
+    "smartphone": 4,
+    "ai":         3,
+    "cpu_gpu":    2,
+    "windows":    2,
+    "tablet":     2,
+    "xr":         1,
+    "wearable":   1,
+    "general":    1,
 }
 
 # ─────────────────────────────────────────────

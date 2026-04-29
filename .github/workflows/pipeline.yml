@@ -97,7 +97,7 @@ jobs:
         if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
         run: |
-          ARGS="--target 30"
+          ARGS="--target 10"
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --no-publish"
           fi
