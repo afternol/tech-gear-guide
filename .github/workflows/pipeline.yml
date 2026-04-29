@@ -93,25 +93,17 @@ jobs:
             echo "GENERATED_COUNT=$COUNT" >> $GITHUB_ENV
           fi
 
-      - name: '🔍 audit.py — 品質監査'
+      - name: '🔍🔧🚀 audit_loop.py — 品質監査・自動修正・公開'
         if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
-        run: python audit.py
+        run: |
+          ARGS="--target 30"
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --no-publish"
+          fi
+          python audit_loop.py $ARGS
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-      - name: '🔧 correct.py — 自動修正'
-        if: ${{ env.SKIP_PIPELINE != 'true' }}
-        working-directory: pipeline
-        run: python correct.py
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-      - name: '🚀 publish.py — Supabase公開'
-        if: ${{ env.SKIP_PIPELINE != 'true' && github.event.inputs.dry_run != 'true' }}
-        working-directory: pipeline
-        run: python publish.py
-        env:
+          ANTHROPIC_API_KEY:        ${{ secrets.ANTHROPIC_API_KEY }}
           SUPABASE_URL:             ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY:     ${{ secrets.SUPABASE_SERVICE_KEY }}
           NEXTJS_REVALIDATE_URL:    ${{ secrets.NEXTJS_REVALIDATE_URL }}

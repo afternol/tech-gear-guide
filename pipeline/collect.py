@@ -123,6 +123,16 @@ LEAK_KEYWORDS = [
     "benchmark", "geekbench", "antutu",
 ]
 
+# グローバル除外キーワード（全ソース共通・タイトルに含まれる場合スキップ）
+GLOBAL_SKIP_KEYWORDS: tuple[str, ...] = (
+    # セール・値引き（日本市場との文脈差が大きい）
+    "best deals", "deals on", "% off", "percent off",
+    "prime day", "black friday", "cyber monday", "price drop",
+    "limited time offer", "amazon deal", "amazon sale",
+    # 米国通信キャリア固有記事（日本読者に関係なし）
+    "verizon", "at&t", "comcast", "xfinity", "boost mobile", "spectrum mobile",
+)
+
 # ─────────────────────────────────────────────
 # カテゴリ別バッチ上限
 # ─────────────────────────────────────────────
@@ -277,8 +287,31 @@ def _strip_html(html: str) -> str:
     text = re.sub(r"<[^>]+>", " ", html)
     return re.sub(r"\s+", " ", text).strip()
 
-def _title_fingerprint(title: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", title.lower())
+_STOPWORDS: frozenset[str] = frozenset({
+    "the", "this", "that", "with", "from", "about", "have", "will", "into",
+    "been", "what", "when", "how", "its", "new", "for", "and", "but", "not",
+    "are", "all", "can", "has", "get", "out", "one", "more", "also", "than",
+    "via", "after", "over", "just", "your", "here", "our", "their", "says",
+    "said", "could", "would", "should", "may", "might", "now", "then", "them",
+    "these", "those", "some", "while", "next", "back", "first", "last",
+    "already", "still", "even", "both", "only", "under", "well", "down",
+    "report", "latest", "update", "official", "confirmed", "launch", "launches",
+    "launched", "feature", "features", "detail", "details", "reveal", "reveals",
+})
+
+def _title_tokens(title: str) -> frozenset[str]:
+    words = re.sub(r"[^a-z0-9\s]", "", title.lower()).split()
+    return frozenset(w for w in words if len(w) >= 3 and w not in _STOPWORDS)
+
+def _is_topic_dup(tokens: frozenset[str], seen: list[frozenset[str]], threshold: float = 0.6) -> bool:
+    if len(tokens) < 2:
+        return False
+    for s in seen:
+        if len(s) < 2:
+            continue
+        if len(tokens & s) / min(len(tokens), len(s)) >= threshold:
+            return True
+    return False
 
 def _parse_published(entry) -> Optional[datetime]:
     try:
@@ -461,22 +494,27 @@ async def fetch_body(url: str, src: Source, rss_body: str, browser) -> tuple[str
 
 def dedup_and_limit(articles: list[RawArticle]) -> list[RawArticle]:
     articles    = sorted(articles, key=lambda x: -x.score)
-    seen_urls:  set[str]       = set()
-    seen_fps:   set[str]       = set()
-    cat_counts: Counter        = Counter()
-    result:     list[RawArticle] = []
+    seen_urls:  set[str]             = set()
+    seen_tokens: list[frozenset[str]] = []
+    cat_counts: Counter              = Counter()
+    result:     list[RawArticle]     = []
 
     for a in articles:
         if a.url in seen_urls:
             continue
-        fp = _title_fingerprint(a.title)
-        if fp in seen_fps:
+        # グローバル除外キーワードチェック
+        title_lower = a.title.lower()
+        if any(k in title_lower for k in GLOBAL_SKIP_KEYWORDS):
+            continue
+        # トークンオーバーラップによる重複検出
+        tokens = _title_tokens(a.title)
+        if _is_topic_dup(tokens, seen_tokens):
             continue
         limit = CATEGORY_LIMITS.get(a.category, 3)
         if not a.is_must_catch and cat_counts[a.category] >= limit:
             continue
         seen_urls.add(a.url)
-        seen_fps.add(fp)
+        seen_tokens.append(tokens)
         cat_counts[a.category] += 1
         result.append(a)
     return result
