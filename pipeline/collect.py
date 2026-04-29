@@ -44,7 +44,7 @@ except ImportError:
 # ─────────────────────────────────────────────
 
 MIN_BODY_LEN        = 500
-COLLECT_HOURS       = 24
+COLLECT_HOURS       = 12
 PLAYWRIGHT_SEM      = 3
 OUTPUT_PATH         = Path("collected_articles.jsonl")
 CACHE_PATH          = Path("processed_urls_cache.json")
