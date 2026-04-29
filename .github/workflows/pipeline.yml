@@ -76,10 +76,23 @@ jobs:
             echo "SKIP_PIPELINE=true" >> $GITHUB_ENV
           fi
 
+      - name: 曜日別パラメータを設定（JST土日は半分）
+        run: |
+          JST_DOW=$(TZ=Asia/Tokyo date +%u)   # 1=月 … 6=土 7=日
+          if [ "$JST_DOW" -ge 6 ]; then
+            echo "DAILY_MAX=5"    >> $GITHUB_ENV
+            echo "DAILY_TARGET=5" >> $GITHUB_ENV
+            echo "今日はJST週末 → 1回あたり5件（15件/日）"
+          else
+            echo "DAILY_MAX=10"    >> $GITHUB_ENV
+            echo "DAILY_TARGET=10" >> $GITHUB_ENV
+            echo "今日はJST平日 → 1回あたり10件（30件/日）"
+          fi
+
       - name: '✍️  generate.py — 記事生成'
         if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
-        run: python generate.py
+        run: python generate.py --max $DAILY_MAX
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
@@ -97,7 +110,7 @@ jobs:
         if: ${{ env.SKIP_PIPELINE != 'true' }}
         working-directory: pipeline
         run: |
-          ARGS="--target 10"
+          ARGS="--target $DAILY_TARGET"
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --no-publish"
           fi
