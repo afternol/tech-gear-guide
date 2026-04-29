@@ -276,6 +276,18 @@ SOURCES: list[Source] = [
            skip_keywords=["deal", "best deal", "review: "]),
     Source("Yahoo Tech",        "https://news.yahoo.com/rss/tech/",
            tier=2, category="general",    fetch_method="playwright"),
+    Source("Android Police",    "https://www.androidpolice.com/feed/",
+           tier=2, category="smartphone", fetch_method="playwright",
+           skip_keywords=["deal", "best deal", "coupon", "sale", "review: "]),
+    Source("Tech Advisor",      "https://www.techadvisor.com/feed/",
+           tier=2, category="general",    fetch_method="playwright",
+           skip_keywords=["deal", "best", "sale", "coupon", "how to"]),
+    Source("Computerworld",     "https://www.computerworld.com/index.rss",
+           tier=2, category="windows",    fetch_method="playwright",
+           skip_keywords=["deal", "best", "sale", "coupon"]),
+    Source("Trusted Reviews",   "https://www.trustedreviews.com/feed",
+           tier=2, category="general",    fetch_method="playwright",
+           skip_keywords=["deal", "best deal", "sale", "review: "]),
 ]
 
 # ─────────────────────────────────────────────
