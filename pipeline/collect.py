@@ -190,7 +190,7 @@ CATEGORY_LIMITS: dict[str, int] = {
     "peripheral": 2,   # 周辺機器・アプリ
     "xr":         1,
     "wearable":   1,
-    "general":    0,
+    "general":    3,   # キーワード未分類記事も許容
 }
 
 # ─────────────────────────────────────────────
@@ -202,7 +202,7 @@ class Source:
     name: str
     rss: str
     tier: int
-    category: str
+    category: str      # キーワード未マッチ時のデフォルト分類（ソースを特定カテゴリに制限しない）
     fetch_method: str
     gnews_rss: str = ""
     skip_keywords: list = field(default_factory=list)

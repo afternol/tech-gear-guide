@@ -1,16 +1,15 @@
 import Image from 'next/image'
-import { formatDistanceToNow } from 'date-fns'
-import { ja } from 'date-fns/locale'
+import { formatJST } from '@/lib/date'
 import { getArticles, getMustCatchArticles, getLatestByCategories } from '@/lib/articles'
 import { ArticleCard } from '@/components/ArticleCard'
 import { CATEGORY_LABELS } from '@/lib/types'
 import type { Category } from '@/lib/types'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export default async function HomePage() {
   const [mustCatch, latest, byCategory] = await Promise.all([
-    getMustCatchArticles(3),
+    getMustCatchArticles(5),
     getArticles({ limit: 12 }),
     getLatestByCategories(4),
   ])
@@ -47,54 +46,50 @@ export default async function HomePage() {
             <h2 className="text-xs font-bold text-blue-600 uppercase tracking-widest">注目ニュース</h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* 大フィーチャードカード */}
-            {mustCatch[0] && (
-              <a
-                href={`/articles/${mustCatch[0].slug}`}
-                className="lg:col-span-2 group relative block rounded-2xl overflow-hidden h-60 sm:h-72 lg:h-[330px] bg-slate-900"
-              >
-                {mustCatch[0].featured_image_url ? (
-                  <Image
-                    src={mustCatch[0].featured_image_url}
-                    alt={mustCatch[0].title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-75"
-                    sizes="(max-width: 1024px) 100vw, 66vw"
-                    priority
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-700 to-slate-900" />
-                )}
-                {/* グラデーションオーバーレイ */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                {/* テキスト */}
-                <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6">
-                  <span className="text-xs font-bold text-blue-300 uppercase tracking-wider mb-2">
-                    {CATEGORY_LABELS[mustCatch[0].category]}
-                  </span>
-                  <h2 className="text-white font-bold text-xl sm:text-2xl leading-snug line-clamp-3 group-hover:text-blue-100 transition-colors">
-                    {mustCatch[0].title}
-                  </h2>
-                  <p className="text-gray-400 text-xs mt-3">
-                    {formatDistanceToNow(new Date(mustCatch[0].published_at), { addSuffix: true, locale: ja })}
-                  </p>
-                </div>
-                <span className="absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-600 text-white shadow">
-                  注目
+          {/* ヒーローカード（1位） */}
+          {mustCatch[0] && (
+            <a
+              href={`/articles/${mustCatch[0].slug}`}
+              className="group relative block rounded-2xl overflow-hidden h-64 sm:h-80 bg-slate-900 mb-4"
+            >
+              {mustCatch[0].featured_image_url ? (
+                <Image
+                  src={mustCatch[0].featured_image_url}
+                  alt={mustCatch[0].title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-75"
+                  sizes="100vw"
+                  priority
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-700 to-slate-900" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+              <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-7">
+                <span className="font-bold text-blue-300 uppercase tracking-wider mb-2">
+                  {CATEGORY_LABELS[mustCatch[0].category]}
                 </span>
-              </a>
-            )}
-
-            {/* サイドカード（2・3位） */}
-            {mustCatch.length > 1 && (
-              <div className="flex flex-row lg:flex-col gap-4">
-                {mustCatch.slice(1).map(article => (
-                  <ArticleCard key={article.slug} article={article} />
-                ))}
+                <h2 className="text-white font-bold text-xl sm:text-3xl leading-snug line-clamp-2 group-hover:text-blue-100 transition-colors">
+                  {mustCatch[0].title}
+                </h2>
+                <p className="text-gray-400 mt-2">
+                  {formatJST(mustCatch[0].published_at, 'yyyy年M月d日')}
+                </p>
               </div>
-            )}
-          </div>
+              <span className="absolute top-4 left-4 font-bold px-3 py-1 rounded-full bg-blue-600 text-white shadow">
+                注目
+              </span>
+            </a>
+          )}
+
+          {/* サブカード（2〜5位） */}
+          {mustCatch.length > 1 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {mustCatch.slice(1).map(article => (
+                <ArticleCard key={article.slug} article={article} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 

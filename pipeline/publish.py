@@ -173,17 +173,21 @@ def upload_image(local_path: str, slug: str) -> Optional[str]:
 # ISR revalidate / IndexNow
 # ─────────────────────────────────────────────
 
-def revalidate(slug: str) -> bool:
+def revalidate(slug: str, category: str = "") -> bool:
     if not NEXTJS_REVALIDATE_URL:
         return True
+    params: dict = {"secret": NEXTJS_REVALIDATE_SECRET, "path": f"/articles/{slug}"}
+    if category:
+        params["category"] = category
     try:
         with httpx.Client(timeout=10) as c:
-            r = c.get(
-                NEXTJS_REVALIDATE_URL,
-                params={"secret": NEXTJS_REVALIDATE_SECRET, "path": f"/articles/{slug}"},
-            )
-            return r.status_code == 200
-    except Exception:
+            r = c.get(NEXTJS_REVALIDATE_URL, params=params)
+            if r.status_code != 200:
+                print(f"  ⚠️  revalidate失敗 ({r.status_code}): {slug}")
+                return False
+            return True
+    except Exception as e:
+        print(f"  ⚠️  revalidate例外: {e}")
         return False
 
 async def ping_indexnow(slugs: list[str]) -> int:
@@ -212,6 +216,49 @@ async def ping_indexnow(slugs: list[str]) -> int:
     except Exception as e:
         print(f"  ⚠️  IndexNow 送信失敗: {e}")
         return 0
+
+BLOGMURA_PING_URL = "https://ping.blogmura.com/xmlrpc/tffn3p8tph44/"
+WITH2_PING_URL    = "https://blog.with2.net/ping.php/2140219/1777445247"
+
+def ping_with2() -> bool:
+    """人気ブログランキングへ ping を送信。"""
+    try:
+        with httpx.Client(timeout=15) as c:
+            r = c.get(WITH2_PING_URL)
+            if r.status_code == 200:
+                return True
+            print(f"  ⚠️  人気ブログランキング ping HTTP {r.status_code}")
+            return False
+    except Exception as e:
+        print(f"  ⚠️  人気ブログランキング ping 失敗: {e}")
+        return False
+
+def ping_blogmura() -> bool:
+    """にほんブログ村へ XML-RPC ping を送信。新規記事公開後に1回だけ呼ぶ。"""
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<methodCall>'
+        '<methodName>weblogUpdates.ping</methodName>'
+        '<params>'
+        f'<param><value><string>Tech Gear Guide</string></value></param>'
+        f'<param><value><string>{SITE_URL}</string></value></param>'
+        '</params>'
+        '</methodCall>'
+    )
+    try:
+        with httpx.Client(timeout=15) as c:
+            r = c.post(
+                BLOGMURA_PING_URL,
+                content=xml.encode("utf-8"),
+                headers={"Content-Type": "text/xml; charset=utf-8"},
+            )
+            if r.status_code == 200:
+                return True
+            print(f"  ⚠️  ブログ村 ping HTTP {r.status_code}")
+            return False
+    except Exception as e:
+        print(f"  ⚠️  ブログ村 ping 失敗: {e}")
+        return False
 
 def is_major_update(old_body: str, new_body: str) -> bool:
     old_len = len(old_body)
@@ -315,7 +362,7 @@ async def publish_one(article: dict, sem: asyncio.Semaphore) -> dict:
             log["image_src"] = img_result.get("source", "")
             print(f"  ✅ 公開: {title[:55]}")
 
-        revalidate(slug)
+        revalidate(slug, article.get("category", ""))
 
         log["status"] = "published"
         log["action"] = action
@@ -356,6 +403,13 @@ async def main():
     indexed   = await ping_indexnow(new_slugs)
     if indexed:
         print(f"  📡 IndexNow送信: {indexed} URL → Bing")
+
+    # ブログランキング系 ping（新規公開がある場合のみ）
+    if inserted > 0:
+        ok1 = ping_blogmura()
+        ok2 = ping_with2()
+        print(f"  🏘️  ブログ村 ping    : {'成功' if ok1 else '失敗'}")
+        print(f"  🏆 人気ブログランキング ping: {'成功' if ok2 else '失敗'}")
 
     print("\n" + "=" * 60)
     print(f"  ✅ 新規公開        : {inserted} 件")
