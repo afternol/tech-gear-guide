@@ -179,18 +179,18 @@ GLOBAL_SKIP_KEYWORDS: tuple[str, ...] = (
 # カテゴリ別バッチ上限
 # ─────────────────────────────────────────────
 
-# 1回10記事・1日3回30記事運用: generate.py --max 10 と組み合わせて使用
-# 合計21件（バッファ）→ generate.py --max 10 で絞る
+# 1回15記事・1日2回30記事運用: generate.py --max 15 と組み合わせて使用
+# 合計37件（バッファ）→ generate.py --max 15 で絞る
 CATEGORY_LIMITS: dict[str, int] = {
-    "smartphone": 6,   # 重視
-    "cpu_gpu":    4,   # 重視
-    "windows":    4,   # 重視
-    "tablet":     3,   # 重視
-    "ai":         2,
-    "peripheral": 2,   # 周辺機器・アプリ
-    "xr":         1,
-    "wearable":   1,
-    "general":    3,   # キーワード未分類記事も許容
+    "smartphone": 8,   # 重視
+    "cpu_gpu":    5,   # 重視
+    "windows":    5,   # 重視
+    "tablet":     4,   # 重視
+    "ai":         4,
+    "peripheral": 3,   # 周辺機器・アプリ
+    "xr":         2,
+    "wearable":   2,
+    "general":    4,   # キーワード未分類記事も許容
 }
 
 # ─────────────────────────────────────────────
@@ -250,6 +250,32 @@ SOURCES: list[Source] = [
     Source("Neowin",            "",
            tier=2, category="windows",    fetch_method="playwright",
            gnews_rss="https://news.google.com/rss/search?q=site:neowin.net&hl=en-US&gl=US&ceid=US:en"),
+
+    # ── 追加ソース ─────────────────────────────────────────────────────────
+    Source("PhoneArena",        "https://www.phonearena.com/feed",
+           tier=2, category="smartphone", fetch_method="playwright",
+           skip_keywords=["deal", "best deal", "coupon", "vs ", "review: "]),
+    Source("The Mac Observer",  "https://www.macobserver.com/feed/",
+           tier=2, category="smartphone", fetch_method="httpx"),
+    Source("Cult of Mac",       "https://www.cultofmac.com/feed/",
+           tier=2, category="smartphone", fetch_method="httpx",
+           skip_keywords=["deal", "sale", "discount", "how to"]),
+    Source("Tom's Guide",       "https://www.tomsguide.com/feeds/all",
+           tier=2, category="general",    fetch_method="playwright",
+           skip_keywords=["deal", "best", "coupon", "sale", "quordle", "wordle"]),
+    Source("BGR",               "https://bgr.com/feed/",
+           tier=2, category="smartphone", fetch_method="httpx",
+           skip_keywords=["deal", "best deal", "save "]),
+    Source("Android Headlines", "https://www.androidheadlines.com/feed",
+           tier=2, category="smartphone", fetch_method="httpx"),
+    Source("CNET",              "https://www.cnet.com/rss/news/",
+           tier=2, category="general",    fetch_method="playwright",
+           skip_keywords=["deal", "best", "sale", "coupon", "promo"]),
+    Source("SlashGear",         "https://www.slashgear.com/feed/",
+           tier=2, category="general",    fetch_method="httpx",
+           skip_keywords=["deal", "best deal", "review: "]),
+    Source("Yahoo Tech",        "https://news.yahoo.com/rss/tech/",
+           tier=2, category="general",    fetch_method="playwright"),
 ]
 
 # ─────────────────────────────────────────────

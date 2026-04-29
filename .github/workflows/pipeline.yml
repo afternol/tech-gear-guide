@@ -2,8 +2,7 @@ name: Tech Gear Guide Pipeline
 
 on:
   schedule:
-    - cron: '0 22 * * *'   # JST 07:00 (UTC 22:00 前日)
-    - cron: '0 3 * * *'    # JST 12:00 (UTC 03:00)
+    - cron: '0 21 * * *'   # JST 06:00 (UTC 21:00 前日)
     - cron: '0 9 * * *'    # JST 18:00 (UTC 09:00)
     - cron: '0 1 1 * *'    # 月初 JST 10:00 (UTC 01:00) — 月次pruneバッチ
   workflow_dispatch:
@@ -76,18 +75,11 @@ jobs:
             echo "SKIP_PIPELINE=true" >> $GITHUB_ENV
           fi
 
-      - name: 曜日別パラメータを設定（JST土日は半分）
+      - name: パラメータを設定（1回15件・1日2回30件）
         run: |
-          JST_DOW=$(TZ=Asia/Tokyo date +%u)   # 1=月 … 6=土 7=日
-          if [ "$JST_DOW" -ge 6 ]; then
-            echo "DAILY_MAX=5"    >> $GITHUB_ENV
-            echo "DAILY_TARGET=5" >> $GITHUB_ENV
-            echo "今日はJST週末 → 1回あたり5件（15件/日）"
-          else
-            echo "DAILY_MAX=10"    >> $GITHUB_ENV
-            echo "DAILY_TARGET=10" >> $GITHUB_ENV
-            echo "今日はJST平日 → 1回あたり10件（30件/日）"
-          fi
+          echo "DAILY_MAX=15"    >> $GITHUB_ENV
+          echo "DAILY_TARGET=15" >> $GITHUB_ENV
+          echo "1回あたり15件（30件/日）"
 
       - name: '✍️  generate.py — 記事生成'
         if: ${{ env.SKIP_PIPELINE != 'true' }}
