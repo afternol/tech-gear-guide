@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title:       '編集方針',
+  title:       'About（編集方針）',
   description: 'Tech Gear Guideの編集方針・コンテンツポリシーについてご説明します。',
 }
 
 export default function AboutPage() {
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">編集方針</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">About（編集方針）</h1>
       <p className="text-sm text-gray-400 mb-10">最終更新: 2026年4月</p>
 
       <div className="space-y-10 text-gray-700 leading-relaxed">
