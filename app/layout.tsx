@@ -174,7 +174,7 @@ function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider">サイト情報</h4>
             <ul className="space-y-2.5">
-              <li><a href="/about"        className="text-xs hover:text-white transition-colors">編集方針</a></li>
+              <li><a href="/about"        className="text-xs hover:text-white transition-colors">About</a></li>
               <li><a href="/privacy"      className="text-xs hover:text-white transition-colors">プライバシーポリシー</a></li>
               <li><a href="/feed/all.xml" className="text-xs hover:text-white transition-colors">RSSフィード</a></li>
             </ul>
