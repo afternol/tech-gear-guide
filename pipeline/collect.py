@@ -67,16 +67,32 @@ BROWSER_HEADERS = {
 
 MUST_CATCH: dict[str, list[str]] = {
     "smartphone": [
+        # Apple
         "iphone 17", "iphone 18", "iphone ultra",
-        "galaxy s26", "galaxy z fold 7", "galaxy z flip 7",
-        "pixel 10", "pixel 9a",
-        "oneplus 13", "xiaomi 15",
+        # Samsung
+        "galaxy s26", "galaxy s25", "galaxy z fold 7", "galaxy z fold 6",
+        "galaxy z flip 7", "galaxy z flip 6", "galaxy a56", "galaxy a55",
+        # Google
+        "pixel 10", "pixel 9a", "pixel 9 pro",
+        # Sony
+        "xperia 1 vii", "xperia 5 vii", "xperia 10 vii",
+        "xperia 1 vi", "xperia 5 vi",
+        # Motorola
+        "motorola edge 60", "motorola razr 2025", "moto g85",
+        # Asus
+        "zenfone 12", "rog phone 9",
+        # Others
+        "oneplus 13", "oneplus 13r", "xiaomi 15", "xiaomi 15 ultra",
+        "oppo find x8", "realme gt 7", "nothing phone 3",
+        "honor 400", "vivo x200",
     ],
     "tablet": [
-        "ipad pro", "ipad air", "ipad mini",
-        "galaxy tab s10", "galaxy tab s11",
-        "surface pro 12", "surface pro 11",
+        "ipad pro", "ipad air", "ipad mini", "ipad 11",
+        "galaxy tab s10", "galaxy tab s11", "galaxy tab s10 fe",
+        "surface pro 12", "surface pro 11", "surface go 4",
         "pixel tablet 2",
+        "lenovo tab p13", "lenovo tab extreme", "xiaomi pad 7",
+        "matebook", "matepad",
     ],
     "windows": [
         "windows 12", "windows 11",
@@ -147,16 +163,16 @@ GLOBAL_SKIP_KEYWORDS: tuple[str, ...] = (
 # ─────────────────────────────────────────────
 
 # 1回10記事・1日3回30記事運用: generate.py --max 10 と組み合わせて使用
-# 合計16件（バッファ）→ generate.py --max 10 で絞る
+# 合計21件（バッファ）→ generate.py --max 10 で絞る
 CATEGORY_LIMITS: dict[str, int] = {
-    "smartphone": 4,
-    "ai":         3,
-    "cpu_gpu":    2,
-    "windows":    2,
-    "tablet":     2,
+    "smartphone": 6,   # 重視
+    "cpu_gpu":    4,   # 重視
+    "windows":    4,   # 重視
+    "tablet":     3,   # 重視
+    "ai":         2,
     "xr":         1,
     "wearable":   1,
-    "general":    1,
+    "general":    0,   # 上記カテゴリ優先のため0に
 }
 
 # ─────────────────────────────────────────────
@@ -223,8 +239,18 @@ SOURCES: list[Source] = [
 # ─────────────────────────────────────────────
 
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    "smartphone": ["iphone", "android", "galaxy", "pixel", "oneplus", "xiaomi", "samsung phone"],
-    "tablet":     ["ipad", "galaxy tab", "surface pro", "surface go", "pixel tablet", "android tablet"],
+    "smartphone": [
+        "iphone", "android", "galaxy", "pixel", "oneplus", "xiaomi", "samsung phone",
+        "xperia", "motorola", "moto g", "moto edge", "razr",
+        "oppo", "realme", "honor", "vivo",
+        "zenfone", "rog phone", "nothing phone",
+        "fold", "flip phone", "clamshell phone",
+    ],
+    "tablet":     [
+        "ipad", "galaxy tab", "surface pro", "surface go", "pixel tablet", "android tablet",
+        "lenovo tab", "xiaomi pad", "matepad", "fire tablet",
+        "drawing tablet", "e-ink tablet",
+    ],
     "windows":    ["windows", "surface laptop", "copilot+", "microsoft pc", "windows update"],
     "cpu_gpu":    ["gpu", "cpu", "rtx", "rx ", "radeon", "geforce", "ryzen", "core ultra",
                    "snapdragon", "apple m", "benchm"],
