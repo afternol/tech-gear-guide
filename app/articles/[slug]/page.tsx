@@ -1,15 +1,15 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { format } from 'date-fns'
-import { ja } from 'date-fns/locale'
-
+import { formatJST } from '@/lib/date'
 import { getArticleBySlug, getRelatedArticles, getAllSlugs } from '@/lib/articles'
 import { ArticleBody } from '@/components/ArticleBody'
 import { ArticleCard } from '@/components/ArticleCard'
 import { NewsArticleStructuredData, BreadcrumbStructuredData } from '@/components/StructuredData'
 import { ReadingProgress } from '@/components/ReadingProgress'
 import { ViewTracker } from '@/components/ViewTracker'
+import { ShareButtons } from '@/components/ShareButtons'
+import { BookmarkButton } from '@/components/BookmarkButton'
 import { CATEGORY_LABELS, CATEGORY_COLORS, ARTICLE_TYPE_LABELS } from '@/lib/types'
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://techgear-guide.com').replace(/^﻿/, '').trim()
@@ -66,10 +66,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound()
 
   const related    = await getRelatedArticles(article)
-
-  const publishedDate = format(new Date(article.published_at), 'yyyy年M月d日', { locale: ja })
+  const articleUrl    = `${SITE_URL}/articles/${article.slug}`
+  const publishedDate = formatJST(article.published_at, 'yyyy年M月d日')
   const updatedDate   = article.last_major_update_at
-    ? format(new Date(article.last_major_update_at), 'yyyy年M月d日 HH:mm', { locale: ja })
+    ? formatJST(article.last_major_update_at, 'yyyy年M月d日 HH:mm')
     : null
   const isProgressive = article.progressive_phase !== null
 
@@ -86,7 +86,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         items={[
           { name: 'ホーム',                          url: SITE_URL },
           { name: CATEGORY_LABELS[article.category], url: `${SITE_URL}/category/${article.category}` },
-          { name: article.title,                     url: `${SITE_URL}/articles/${article.slug}` },
+          { name: article.title,                     url: articleUrl },
         ]}
       />
 
@@ -165,16 +165,23 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <div className="flex flex-wrap gap-2">
               {article.tags.map(tag => (
-                <span
+                <a
                   key={tag}
-                  className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-default transition-colors"
+                  href={`/tag/${encodeURIComponent(tag)}`}
+                  className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
                 >
                   #{tag}
-                </span>
+                </a>
               ))}
             </div>
           </div>
         )}
+
+        {/* シェア・ブックマーク */}
+        <div className="mt-6 pt-6 border-t border-gray-200 flex flex-wrap items-center gap-3">
+          <ShareButtons url={articleUrl} title={article.title} />
+          <BookmarkButton slug={article.slug} />
+        </div>
 
         {/* 編集部ボックス */}
         <div className="mt-8 p-4 sm:p-5 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-4">
