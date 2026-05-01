@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     revalidatePath(path)
     revalidatePath('/')
     revalidatePath('/articles')
+    revalidatePath('/sitemap.xml')
 
     if (category) {
       revalidatePath(`/category/${category}`)

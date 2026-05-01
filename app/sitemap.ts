@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { getAllSlugs } from '@/lib/articles'
 
+export const revalidate = 3600
+
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devicebrief.com').replace(/^﻿/, '').trim()
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
